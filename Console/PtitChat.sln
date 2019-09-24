@@ -1,6 +1,7 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29306.81
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PtitChat", "PtitChat\PtitChat.csproj", "{4728E422-D746-4A76-B36E-C2239DD4296D}"
 EndProject
 Global
@@ -9,9 +10,15 @@ Global
 		Release|anycpu = Release|anycpu
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{4728E422-D746-4A76-B36E-C2239DD4296D}.Debug|anycpu.ActiveCfg = Debug|anycpu
-		{4728E422-D746-4A76-B36E-C2239DD4296D}.Debug|anycpu.Build.0 = Debug|anycpu
-		{4728E422-D746-4A76-B36E-C2239DD4296D}.Release|anycpu.ActiveCfg = Release|anycpu
-		{4728E422-D746-4A76-B36E-C2239DD4296D}.Release|anycpu.Build.0 = Release|anycpu
+		{4728E422-D746-4A76-B36E-C2239DD4296D}.Debug|anycpu.ActiveCfg = Debug|Any CPU
+		{4728E422-D746-4A76-B36E-C2239DD4296D}.Debug|anycpu.Build.0 = Debug|Any CPU
+		{4728E422-D746-4A76-B36E-C2239DD4296D}.Release|anycpu.ActiveCfg = Release|Any CPU
+		{4728E422-D746-4A76-B36E-C2239DD4296D}.Release|anycpu.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {802E4D9A-7EA6-465F-B6A7-0A44B5BFE5DF}
 	EndGlobalSection
 EndGlobal
