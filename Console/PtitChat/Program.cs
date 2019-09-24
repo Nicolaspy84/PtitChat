@@ -9,11 +9,14 @@ namespace PtitChat
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("Voulez vous vous connecter ? (O/N)");
+            Thread thread = new Thread(WaitConnexion);
+            thread.Start();
+            Console.Write("Vous êtes connecté");
+            Console.WriteLine("Voulez vous vous connecter à quelqu'un ? (O/N)");
             string reponse = Console.ReadLine();
             if (reponse == "o" || reponse == "O")
             {
-                Console.WriteLine("Rentrez une adresse ip et un port");
+                Console.WriteLine("Rentrez une adresse ip");
                 string IpAdress = Console.ReadLine();
                 TcpClient serveur = new TcpClient(IpAdress, 1302);
             }
@@ -21,21 +24,18 @@ namespace PtitChat
                 Console.WriteLine("ok");
             else
             {
-                Console.WriteLine("Erreur");
+                Console.WriteLine("Il faut répondre o ou n boloss");
                 return;
             }
-            Thread thread = new Thread(WaitConnexion);
-            thread.Start();
-                
-
         }
 
         public static void WaitConnexion()
         {
             TcpListener listener = new TcpListener(1302);
             listener.Start();
+            Console.WriteLine("En attente de quelqu'un");
             TcpClient client = listener.AcceptTcpClient();
-            Console.WriteLine("Client connecté");
+            Console.WriteLine("Quelqu'un s'est connecté à vous !");
         }
     }
 }
