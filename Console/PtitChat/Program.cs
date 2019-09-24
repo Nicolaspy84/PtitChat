@@ -22,8 +22,10 @@ namespace PtitChat
                 Console.WriteLine("Rentrez une adresse ip");
                 string IpAdress = Console.ReadLine();
                 TcpClient serveur = new TcpClient(IpAdress, 1302);
+                Thread thread1 = new Thread(() => Ecouter(serveur));
+                thread1.Start();
             }
-            if (reponse == "n" || reponse == "N")
+            else if (reponse == "n" || reponse == "N")
                 Console.WriteLine("ok");
             else
             {
@@ -64,5 +66,7 @@ namespace PtitChat
                 }
             }
         }
+
+        
     }
 }
