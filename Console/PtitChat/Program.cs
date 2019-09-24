@@ -9,33 +9,30 @@ namespace PtitChat
     {
         public static void Main(string[] args)
         {
-            Thread thread = new Thread(WaitConnexion);
-            thread.Start();
-            Console.Write("Vous êtes connecté");
-            Console.WriteLine("Voulez vous vous connecter à quelqu'un ? (O/N)");
-            string reponse = Console.ReadLine();
-            if (reponse == "o" || reponse == "O")
-            {
-                Console.WriteLine("Rentrez une adresse ip");
-                string IpAdress = Console.ReadLine();
-                TcpClient serveur = new TcpClient(IpAdress, 1302);
-            }
-            if (reponse == "n" || reponse == "N")
-                Console.WriteLine("ok");
-            else
-            {
-                Console.WriteLine("Il faut répondre o ou n boloss");
-                return;
-            }
+            InitiateNetworking();
         }
 
-        public static void WaitConnexion()
+        // This method starts the application's networking system (this is the entry point of the code)
+        public static void InitiateNetworking()
         {
-            TcpListener listener = new TcpListener(1302);
-            listener.Start();
-            Console.WriteLine("En attente de quelqu'un");
-            TcpClient client = listener.AcceptTcpClient();
-            Console.WriteLine("Quelqu'un s'est connecté à vous !");
+
+            // Ask for a unique username
+            Console.WriteLine("Please enter a unique username :");
+            string username = Console.ReadLine();
+
+
+            // We instantiate our custom client class
+            Client MyClient = new Client(username);
+
+
+            // 
+            Console.WriteLine("Would you like to connect to add peer addresses ? (O/N)");
+            string answer = Console.ReadLine();
+
+            if (answer == "O" || answer == "o")
+            {
+
+            }
         }
     }
 }
