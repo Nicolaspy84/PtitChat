@@ -3,12 +3,13 @@ using System.Net;
 using System.Threading;
 using System.Net.Sockets;
 using System.Text;
+using System.Collections.Generic;
 
 namespace PtitChat
 {
     class MainClass
     {
-        public static TcpClient Client;
+        public static List<TcpClient> Client = new List<TcpClient>();
         public static void Main(string[] args)
         {
             Thread thread = new Thread(WaitConnexion);
@@ -29,8 +30,6 @@ namespace PtitChat
                 Console.WriteLine("Il faut répondre o ou n boloss");
                 return;
             }
-            Thread thread2 = new Thread(() => Ecouter(Client));
-            thread2.Start();
 
         }
 
@@ -40,8 +39,10 @@ namespace PtitChat
             listener.Start();
             Console.WriteLine("En attente de quelqu'un");
             TcpClient client = listener.AcceptTcpClient();
-            Client = client;
+            Client.Add(client);
             Console.WriteLine("Quelqu'un s'est connecté à vous !");
+            Thread thread2 = new Thread(() => Ecouter(client));
+            thread2.Start();
             var stream = client.GetStream();
             stream.Write(Encoding.UTF8.GetBytes("Hello"), 0, 5);
         }
