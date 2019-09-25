@@ -51,16 +51,20 @@ namespace PtitChat
             {
                 Console.WriteLine("Specify addresses you would like to connect to (separate with spaces) :");
                 string[] ipAddresses = Console.ReadLine().Split(' ');
+
                 foreach (var ipAddress in ipAddresses)
                 {
-                    Thread thread = new Thread(MyClient.ConnectToPeer);
-                    thread.Start(ipAddress);
+                    Thread th = new Thread(new ParameterizedThreadStart(MyClient.ConnectToPeer));
+                    th.Start(ipAddress);
                 }
             }
 
 
             // We start listening to other peers
+            Thread thread = new Thread(new ThreadStart(MyClient.ListenForConnections));
+            thread.Start();
 
+            thread.Join();
         }
     }
 }
