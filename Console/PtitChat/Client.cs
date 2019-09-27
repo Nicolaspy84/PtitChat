@@ -299,6 +299,7 @@ namespace PtitChat
 
         /// <summary>
         /// Adds a peer to our dictionnary (takes care of the lock)
+        /// It will simply update the TcpClient reference if the key already exists
         /// </summary>
         /// <param name="username">string username of the client</param>
         /// <param name="client">TcpClient reference</param>
