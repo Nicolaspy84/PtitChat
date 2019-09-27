@@ -165,10 +165,7 @@ namespace PtitChat
                 if (dataList.Length == 2 && dataList[0] == "USERNAME")
                 {
                     Console.WriteLine("Succesfully connected to {0} at {1}", dataList[1], client.Client.RemoteEndPoint);
-                    lock (Peers)
-                    {
-                        Peers.Add(dataList[1], client);
-                    }
+                    AddPeer(dataList[1], client);
                     MessageExchange(dataList[1]);
                 }
                 else
@@ -193,15 +190,130 @@ namespace PtitChat
         /// <param name="username">string key corresponding to a TcpClient in the Peers dictionnary</param>
         public void MessageExchange(string username)
         {
-            // Do some stuff...
 
-
-            // Close communication
+            // Create a stream reader
+            StreamReader sr;
             lock (Peers)
             {
-                Console.WriteLine("Communication ended with {0} at {1}", username, Peers[username].Client.RemoteEndPoint);
-                Peers[username].Close();
-                Peers.Remove(username);
+                sr = new StreamReader(Peers[username].GetStream());
+            }
+
+            try
+            {
+                while (true)
+                {
+
+                    // Wait for data to arrive
+                    string data;
+                    while (true)
+                    {
+                        data = sr.ReadLine();
+                        if (string.IsNullOrEmpty(data) == false) break;
+                    }
+
+
+                    // Switch over message type
+                    string[] dataList = data.Split(':');
+                    if (dataList.Length == 2 && dataList[0] == "BROADCAST")
+                    {
+                        Console.WriteLine("{0} : {1}", username, dataList[1]);
+                    }
+                    else if (dataList.Length > 0 && dataList[0] == "QUIT")
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Received <{0}> from {1}", data, username);
+                    }
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
+
+            lock (Peers)
+            {
+
+                // Disconnect
+                Console.WriteLine("Communication ended with {0}", username);
+                if (Peers[username] != null)
+                {
+                    Peers[username].Close();
+                    Peers[username].Dispose();
+                    Peers[username] = null;
+                }
+
+            }
+        }
+
+
+        /// <summary>
+        /// Message to broadcast to all known peers
+        /// </summary>
+        /// <param name="message">string to broadcast</param>
+        public void BroadcastMessage(string message)
+        {
+            lock (Peers)
+            {
+                List<string> setToNull = new List<string>();
+                foreach (var peer in Peers)
+                {
+                    try
+                    {
+                        StreamWriter sw = new StreamWriter(peer.Value.GetStream());
+                        sw.WriteLine("BROADCAST:" + message);
+                        sw.Flush();
+                    }
+                    catch (Exception e)
+                    {
+                        if (peer.Value == null)
+                        {
+                            Console.WriteLine("({0} is disconnected)", peer.Key);
+                        }
+                        else if (peer.Value.Connected == false)
+                        {
+                            Console.WriteLine("User {0} appears to be disconnected, ending communication", peer.Key);
+                            peer.Value.Dispose();
+                            peer.Value.Close();
+                            setToNull.Add(peer.Key);
+                        }
+                        else
+                        {
+                            Console.WriteLine(e);
+                        }
+                    }
+                }
+                foreach (var key in setToNull)
+                {
+                    Peers[key] = null;
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Adds a peer to our dictionnary (takes care of the lock)
+        /// </summary>
+        /// <param name="username">string username of the client</param>
+        /// <param name="client">TcpClient reference</param>
+        public void AddPeer(string username, TcpClient client)
+        {
+            lock (Peers)
+            {
+                if (Peers.ContainsKey(username))
+                {
+                    Peers[username] = client;
+                }
+                else
+                {
+                    Peers.Add(username, client);
+                }
             }
         }
     }

@@ -38,7 +38,7 @@ namespace PtitChat
 
 
             // We instanciate our custom client class
-            Client MyClient = new Client(username, port);
+            Client myClient = new Client(username, port);
 
 
             // Ask the user if he knows peer adresses and if he'd like to connect to them
@@ -54,17 +54,23 @@ namespace PtitChat
 
                 foreach (var ipAddress in ipAddresses)
                 {
-                    Thread th = new Thread(new ParameterizedThreadStart(MyClient.ConnectToPeer));
+                    Thread th = new Thread(new ParameterizedThreadStart(myClient.ConnectToPeer));
                     th.Start(ipAddress);
                 }
             }
 
 
             // We start listening to other peers
-            Thread thread = new Thread(new ThreadStart(MyClient.ListenForConnections));
+            Thread thread = new Thread(new ThreadStart(myClient.ListenForConnections));
             thread.Start();
 
-            thread.Join();
+
+            // We wait for messages
+            while (true)
+            {
+                string message = Console.ReadLine();
+                myClient.BroadcastMessage(message);
+            }
         }
     }
 }
