@@ -4,6 +4,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.IO;
+using System.Threading.Tasks;
+
 namespace PtitChat
 {
     /// <summary>
@@ -93,7 +95,7 @@ namespace PtitChat
 
             // Connection successful, we exchange usernames
             Console.WriteLine("Connected to {0}", ipAddress);
-            UsernameExchange(client);
+            Task.Run(() => UsernameExchangeAsync(client));
 
         }
         
@@ -118,9 +120,8 @@ namespace PtitChat
                 Console.WriteLine("{0} is initiating a connection with us...", client.Client.RemoteEndPoint);
 
 
-                // We create a thread to start listening at the channels
-                Thread thread = new Thread(new ParameterizedThreadStart(UsernameExchange));
-                thread.Start(client);
+                // We create a task to start listening at the channels
+                Task.Run(() => UsernameExchangeAsync(client));
 
             }
         }
@@ -130,7 +131,7 @@ namespace PtitChat
         /// This method takes care of the exchange of usernames
         /// </summary>
         /// <param name="oClient">TcpClient we are connecting to</param>
-        public void UsernameExchange(object oClient)
+        public async Task UsernameExchangeAsync(object oClient)
         {
             TcpClient client;
             try
@@ -146,20 +147,15 @@ namespace PtitChat
             // Prepare streams for communication
             StreamReader sr = new StreamReader(client.GetStream());
             StreamWriter sw = new StreamWriter(client.GetStream());
-
             try
             {
                 // Write our information and flush it
-                sw.WriteLine("USERNAME:" + Username);
-                sw.Flush();
+                await sw.WriteLineAsync("USERNAME:" + Username);
+                await sw.FlushAsync();
 
-                // Read peer's username
-                string data;
-                while (true)
-                {
-                    data = sr.ReadLine();
-                    if (string.IsNullOrEmpty(data) == false) break;
-                }
+                // Wait for peer's username
+                string data = await sr.ReadLineAsync();
+
                 Console.WriteLine("Received <{0}> from {1}", data, client.Client.RemoteEndPoint);
                 string[] dataList = data.Split(':');
 
@@ -168,7 +164,7 @@ namespace PtitChat
                 {
                     Console.WriteLine("Succesfully connected to {0} at {1}", dataList[1], client.Client.RemoteEndPoint);
                     AddPeer(dataList[1], client);
-                    MessageExchange(dataList[1]);
+                    MessageExchangeAsync(dataList[1]);
                 }
                 else
                 {
@@ -183,6 +179,7 @@ namespace PtitChat
                 client.Close();
                 return;
             }
+
         }
 
 
@@ -190,7 +187,7 @@ namespace PtitChat
         /// Method dealing with messages from the given peer
         /// </summary>
         /// <param name="username">string key corresponding to a TcpClient in the Peers dictionnary</param>
-        public void MessageExchange(string username)
+        public async Task MessageExchangeAsync(string username)
         {
 
             // Create a stream reader
@@ -205,14 +202,8 @@ namespace PtitChat
                 while (true)
                 {
 
-                    // Wait for data to arrive
-                    string data;
-                    while (true)
-                    {
-                        data = sr.ReadLine();
-                        if (string.IsNullOrEmpty(data) == false) break;
-                    }
-
+                    // Await for data to arrive
+                    string data = await sr.ReadLineAsync();
 
                     // Switch over message type
                     string[] dataList = data.Split(':');
@@ -231,6 +222,9 @@ namespace PtitChat
                 }
             }
             catch (IOException)
+            {
+            }
+            catch (NullReferenceException)
             {
             }
             catch (Exception e)
