@@ -2,12 +2,14 @@
 using System.Net;
 using System.Threading;
 using System.Net.Sockets;
+using System.Text;
+using System.Collections.Generic;
 
 namespace PtitChat
 {
     class MainClass
     {
-
+      
         /// <summary>
         /// Entry point of the program
         /// </summary>
@@ -83,7 +85,6 @@ namespace PtitChat
             {
                 Console.WriteLine(usernameArg);
             }
-
 
             // Ask for a port to communicate through
             int port = -1;
