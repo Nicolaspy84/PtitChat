@@ -11,6 +11,7 @@ namespace PtitChat
     /// </summary>
     public class Client
     {
+
         /// <summary>
         /// Default constructor
         /// </summary>
@@ -95,6 +96,7 @@ namespace PtitChat
             UsernameExchange(client);
 
         }
+        
 
         /// <summary>
         /// Once this method is called, the client will listen on its port for incoming connections

@@ -7,11 +7,19 @@ namespace PtitChat
 {
     class MainClass
     {
+
+        /// <summary>
+        /// Entry point of the program
+        /// </summary>
+        /// <param name="args">cmd line arguments (flags)</param>
         public static void Main(string[] args)
         {
+
+            // Prepare arguments
             string usernameArg = null;
             string portArg = null;
             string peersArg = null;
+
 
             // Parse arguments
             for (int i = 0; i < args.Length; i++)
@@ -50,10 +58,18 @@ namespace PtitChat
                 }
             }
 
+
+            // Initiate networking
             InitiateNetworking(usernameArg, portArg, peersArg);
         }
 
-        // This method starts the application's networking system (this is the entry point of the code)
+
+        /// <summary>
+        /// Creates and starts the client (initiates threads to read/write messages)
+        /// </summary>
+        /// <param name="usernameArg">default username</param>
+        /// <param name="portArg">default port</param>
+        /// <param name="peersArg">default peers' addresses to conenct to (separate with spaces)</param>
         public static void InitiateNetworking(string usernameArg, string portArg, string peersArg)
         {
 
