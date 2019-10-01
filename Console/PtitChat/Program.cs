@@ -9,64 +9,158 @@ namespace PtitChat
 {
     class MainClass
     {
-        public static List<TcpClient> Client = new List<TcpClient>();
+      
+        /// <summary>
+        /// Entry point of the program
+        /// </summary>
+        /// <param name="args">cmd line arguments (flags)</param>
         public static void Main(string[] args)
         {
-            Thread thread = new Thread(WaitConnexion);
-            thread.Start();
-            Console.Write("Vous êtes connecté");
-            Console.WriteLine("Voulez vous vous connecter à quelqu'un ? (O/N)");
-            string reponse = Console.ReadLine();
-            if (reponse == "o" || reponse == "O")
+
+            // Prepare arguments
+            string usernameArg = null;
+            string portArg = null;
+            string peersArg = null;
+
+
+            // Parse arguments
+            for (int i = 0; i < args.Length; i++)
             {
-                Console.WriteLine("Rentrez une adresse ip");
-                string IpAdress = Console.ReadLine();
-                TcpClient serveur = new TcpClient(IpAdress, 1302);
-                Thread thread1 = new Thread(() => Ecouter(serveur));
-                thread1.Start();
+                switch (args[i])
+                {
+                    case "-username":
+                        if (i + 1 < args.Length)
+                        {
+                            usernameArg = args[i + 1];
+                            i++;
+                        }
+                        break;
+                    case "-port":
+                        if (i + 1 < args.Length)
+                        {
+                            portArg = args[i + 1];
+                            i++;
+                        }
+                        break;
+                    case "-peers":
+                        if (i + 1 < args.Length && args[i + 1][0] != '-')
+                        {
+                            peersArg = "";
+                            while (i + 1 < args.Length && args[i + 1][0] != '-')
+                            {
+                                peersArg += args[i + 1] + " ";
+                                i++;
+                            }
+                            peersArg = peersArg.Remove(peersArg.Length - 1);
+                        }
+                        break;
+                    default:
+                        Console.WriteLine("Did not recognize flag {0}", args[i]);
+                        break;
+                }
             }
-            else if (reponse == "n" || reponse == "N")
-                Console.WriteLine("ok");
+
+
+            // Initiate networking
+            InitiateNetworking(usernameArg, portArg, peersArg);
+        }
+
+
+        /// <summary>
+        /// Creates and starts the client (initiates threads to read/write messages)
+        /// </summary>
+        /// <param name="usernameArg">default username</param>
+        /// <param name="portArg">default port</param>
+        /// <param name="peersArg">default peers' addresses to conenct to (separate with spaces)</param>
+        public static void InitiateNetworking(string usernameArg, string portArg, string peersArg)
+        {
+
+            // Ask for a unique username
+            Console.WriteLine("Please enter a unique username :");
+            if (string.IsNullOrEmpty(usernameArg))
+            {
+                usernameArg = Console.ReadLine();
+            }
             else
             {
-                Console.WriteLine("Il faut répondre o ou n boloss");
-                return;
+                Console.WriteLine(usernameArg);
             }
 
-        }
-
-        public static void WaitConnexion()
-        {
-            TcpListener listener = new TcpListener(1302);
-            listener.Start();
-            Console.WriteLine("En attente de quelqu'un");
-            TcpClient client = listener.AcceptTcpClient();
-            Client.Add(client);
-            Console.WriteLine("Quelqu'un s'est connecté à vous !");
-            Thread thread2 = new Thread(() => Ecouter(client));
-            thread2.Start();
-            var stream = client.GetStream();
-            stream.Write(Encoding.UTF8.GetBytes("Hello"), 0, 5);
-        }
-
-        public static void Ecouter(TcpClient client)
-        {
-            var stream = client.GetStream();
-            byte[] buffer = new byte[8];
-            while (true)
+            // Ask for a port to communicate through
+            int port = -1;
+            while (port < 0)
             {
+                Console.WriteLine("Please enter a valid port for your client :");
+                if (string.IsNullOrEmpty(portArg))
+                {
+                    portArg = Console.ReadLine();
+                }
+                else
+                {
+                    Console.WriteLine(portArg);
+                }
                 try
                 {
-                    stream.Read(buffer, 0, 5);
-                    Console.WriteLine(Encoding.UTF8.GetString(buffer, 0, 5));
+                    port = Int32.Parse(portArg);
                 }
-                catch (Exception e)
+                catch (FormatException)
                 {
-                    Console.WriteLine(e.Message);
+                    portArg = null;
+                    Console.WriteLine("Couldn't parse string to int, please try again.");
                 }
             }
-        }
 
-        
+
+            // We instanciate our custom client class
+            Client myClient = new Client(usernameArg, port);
+
+
+            // Ask the user if he knows peer adresses and if he'd like to connect to them
+            Console.WriteLine("Would you like to add peer addresses ? (O/N)");
+            string answer = "O";
+            if (string.IsNullOrEmpty(peersArg))
+            {
+                answer = Console.ReadLine();
+            }
+            else
+            {
+                Console.WriteLine("O");
+            }
+
+
+            // If we know peers, we try to connect to them
+            if (answer == "O" || answer == "o")
+            {
+                Console.WriteLine("Specify addresses you would like to connect to (separate with spaces) :");
+                if (string.IsNullOrEmpty(peersArg))
+                {
+                    peersArg = Console.ReadLine();
+                }
+                else
+                {
+                    Console.WriteLine(peersArg);
+                }
+                string[] ipAddresses = peersArg.Split(' ');
+
+                foreach (var ipAddress in ipAddresses)
+                {
+                    Thread th = new Thread(new ParameterizedThreadStart(myClient.ConnectToPeer));
+                    th.Start(ipAddress);
+                }
+            }
+
+
+            // We start listening to other peers
+            Thread thread = new Thread(new ThreadStart(myClient.ListenForConnections));
+            thread.Start();
+
+
+            // We wait for messages
+            while (true)
+            {
+                string message = Console.ReadLine();
+                myClient.BroadcastMessage(message);
+            }
+        }
     }
 }
