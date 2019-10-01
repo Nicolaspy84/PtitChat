@@ -21,6 +21,7 @@ namespace PtitChat
         {
             Username = username;
             Port = port;
+            messages = new Messages(this);
         }
 
 
@@ -41,6 +42,8 @@ namespace PtitChat
         /// The key is the name of the peer
         /// </summary>
         public Dictionary<string, TcpClient> Peers = new Dictionary<string, TcpClient>();
+
+        public Messages messages;
 
 
         /// <summary>
@@ -216,9 +219,11 @@ namespace PtitChat
 
                     // Switch over message type
                     string[] dataList = data.Split(':');
-                    if (dataList.Length == 2 && dataList[0] == "BROADCAST")
+                    if (dataList.Length == 3 && dataList[0] == "BROADCAST")
                     {
-                        Console.WriteLine("{0} : {1}", username, dataList[1]);
+                        Console.WriteLine("{0} : {1}", username, dataList[2]);
+                        // add received message to messages dictionary
+                        messages.AddPeerMessage(dataList[0], dataList[1], dataList[2]);
                     }
                     else if (dataList.Length > 0 && dataList[0] == "QUIT")
                     {
@@ -269,7 +274,7 @@ namespace PtitChat
                     try
                     {
                         StreamWriter sw = new StreamWriter(peer.Value.GetStream());
-                        sw.WriteLine("BROADCAST:" + message);
+                        sw.WriteLine("BROADCAST:"+ messages.IdMessage.ToString() + ":" + message);
                         sw.Flush();
                     }
                     catch (Exception e)
@@ -290,6 +295,8 @@ namespace PtitChat
                             Console.WriteLine(e);
                         }
                     }
+                    // add our sended message to the messages dictionary
+                    messages.AddMyMessage(message);
                 }
                 foreach (var key in setToNull)
                 {
