@@ -222,6 +222,13 @@ namespace PtitChat
                     if (dataList.Length == 3 && dataList[0] == "BROADCAST")
                     {
                         Console.WriteLine("{0} : {1}", username, dataList[2]);
+
+                        // display an error if we missed some of the messages
+                        if ((messages.GetLastMessageNb(username) + 1).ToString() != dataList[1]) //look if lastIdReceived + 1 = idReceived
+                        {
+                            Console.WriteLine("We missed some messages of {0}", username);
+                        }
+
                         // add received message to messages dictionary
                         messages.AddPeerMessage(dataList[0], dataList[1], dataList[2]);
                     }
