@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
-using System.IO;
 using System.Threading.Tasks;
 
 namespace PtitChat
@@ -21,13 +19,25 @@ namespace PtitChat
         /// <param name="port">Port for peers to connect to us</param>
         public Client(string username, int port)
         {
+
+            // Setup variables
             Username = username;
             Port = port;
+
+            // Add ourself to the user list
+            lock (User.All)
+            {
+                User.All.Add(username, new User(username));
+            }
+
+            // Subscribe to events
+            Peer.MessageReceivedEvent += BroadcastMessageAsync;
+
         }
 
 
         /// <summary>
-        /// Username shared with other clients (will be associated with our ip address)
+        /// Our username shared with other clients
         /// </summary>
         public readonly string Username;
 
@@ -39,14 +49,35 @@ namespace PtitChat
 
 
         /// <summary>
-        /// Dictionary to hold connected peers
-        /// The key is the name of the peer
+        /// List of connected peers
         /// </summary>
-        public Dictionary<string, TcpClient> Peers = new Dictionary<string, TcpClient>();
+        public List<Peer> Peers = new List<Peer>();
 
 
         /// <summary>
-        /// Connects to the designated peer
+        /// Returns our list of peers
+        /// </summary>
+        /// <returns>Description string</returns>
+        public override string ToString()
+        {
+            string endStr = "";
+            lock (Peers)
+            {
+                foreach (var peer in Peers)
+                {
+                    endStr += string.Format("{0}\n", peer);
+                }
+                if (Peers.Count > 0)
+                {
+                    endStr = endStr.Remove(endStr.Length - 1);
+                }
+            }
+            return endStr;
+        }
+
+
+        /// <summary>
+        /// Connects to the designated peer using its address
         /// </summary>
         /// <param name="ipAddress">string of format "ipaddress:port"</param>
         public void ConnectToPeer(object ipAddress)
@@ -93,10 +124,14 @@ namespace PtitChat
                 return;
             }
 
-            // Connection successful, we exchange usernames
+            // Connection successful
             Console.WriteLine("Connected to {0}", ipAddress);
-            Task.Run(() => UsernameExchangeAsync(client));
-
+            Peer peer = new Peer(client);
+            Task.Run(() => peer.ListenAsync());
+            lock(Peers)
+            {
+                Peers.Add(peer);
+            }
         }
         
 
@@ -118,200 +153,110 @@ namespace PtitChat
                 // We wait for a client to connect to us
                 TcpClient client = Listener.AcceptTcpClient();
                 Console.WriteLine("{0} is initiating a connection with us...", client.Client.RemoteEndPoint);
-
-
-                // We create a task to start listening at the channels
-                Task.Run(() => UsernameExchangeAsync(client));
-
+                Peer peer = new Peer(client);
+                Task.Run(() => peer.ListenAsync());
+                lock(Peers)
+                {
+                    Peers.Add(peer);
+                }
             }
         }
 
 
         /// <summary>
-        /// This method takes care of the exchange of usernames
+        /// Broadcasts async. a received message to other peers (all but originPeer)
         /// </summary>
-        /// <param name="oClient">TcpClient we are connecting to</param>
-        public async Task UsernameExchangeAsync(object oClient)
+        /// <param name="originPeer">origin of the message (who sent it to us, so we won't broadcast the message to him)</param>
+        /// <param name="bounce">Number of times this message has to be broadcasted</param>
+        /// <param name="user">User who originally sent this message</param>
+        /// <param name="msgID">Unique message ID</param>
+        /// <param name="date">Message date and time origin</param>
+        /// <param name="msg">Message content</param>
+        public async Task BroadcastMessageAsync(Peer originPeer, int bounce, string user, int msgID, DateTime date, string msg)
         {
-            TcpClient client;
-            try
+
+            // Decrement our bounce value
+            bounce--;
+            if (bounce < 0)
             {
-                client = (TcpClient)oClient;
-            }
-            catch (InvalidCastException e)
-            {
-                Console.WriteLine(e);
                 return;
             }
 
-            // Prepare streams for communication
-            StreamReader sr = new StreamReader(client.GetStream());
-            StreamWriter sw = new StreamWriter(client.GetStream());
-            try
-            {
-                // Write our information and flush it
-                await sw.WriteLineAsync("USERNAME:" + Username);
-                await sw.FlushAsync();
-
-                // Wait for peer's username
-                string data = await sr.ReadLineAsync();
-
-                Console.WriteLine("Received <{0}> from {1}", data, client.Client.RemoteEndPoint);
-                string[] dataList = data.Split(':');
-
-                // Check that we have USERNAME data
-                if (dataList.Length == 2 && dataList[0] == "USERNAME")
-                {
-                    Console.WriteLine("Succesfully connected to {0} at {1}", dataList[1], client.Client.RemoteEndPoint);
-                    AddPeer(dataList[1], client);
-                    MessageExchangeAsync(dataList[1]);
-                }
-                else
-                {
-                    Console.WriteLine("Received {0} from {1} but we were expecting a USERNAME:<USERNAME> answer, closing communication with this client", data, client.Client.RemoteEndPoint);
-                    client.Close();
-                    return;
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                client.Close();
-                return;
-            }
-
-        }
-
-
-        /// <summary>
-        /// Method dealing with messages from the given peer
-        /// </summary>
-        /// <param name="username">string key corresponding to a TcpClient in the Peers dictionnary</param>
-        public async Task MessageExchangeAsync(string username)
-        {
-
-            // Create a stream reader
-            StreamReader sr;
+            // Then we can broadcast to all other peers
+            // Note : we will delete peers which have null TcpClients (they lost conenction)
+            List<Task> listOfTasks = new List<Task>();
             lock (Peers)
             {
-                sr = new StreamReader(Peers[username].GetStream());
-            }
-
-            try
-            {
-                while (true)
+                int i = 0;
+                List<int> removePeers = new List<int>();
+                foreach (var peer in Peers)
                 {
-
-                    // Await for data to arrive
-                    string data = await sr.ReadLineAsync();
-
-                    // Switch over message type
-                    string[] dataList = data.Split(':');
-                    if (dataList.Length == 2 && dataList[0] == "BROADCAST")
+                    if (peer.Client == null)
                     {
-                        Console.WriteLine("{0} : {1}", username, dataList[1]);
+                        removePeers.Add(i);
                     }
-                    else if (dataList.Length > 0 && dataList[0] == "QUIT")
+                    else if (peer != originPeer)
                     {
-                        break;
+                        listOfTasks.Add(peer.BroadcastAsync(bounce, user, msgID, date, msg));
+                    }
+                    i++;
+                }
+                foreach (var removeIndex in removePeers)
+                {
+                    Peers.RemoveAt(removeIndex);
+                }
+            }
+            await Task.WhenAll(listOfTasks);
+
+        }
+
+
+        /// <summary>
+        /// Message to broadcast to all known peers async.
+        /// </summary>
+        /// <param name="message">string to broadcast</param>
+        public async Task BroadcastMyMessageAsync(string message)
+        {
+
+            // First we create a new message (for ourself)
+            int bounce = 20;
+            string user = Username;
+            int msgID;
+            lock (User.All)
+            {
+                msgID = User.All[Username].NextExpectedMessageID;
+            }
+            DateTime date = DateTime.UtcNow;
+            string msg = message;
+            User.NewMessage(null, user, msgID, date, msg);
+
+
+            // Then we can broadcast to all peers
+            // Note : we will delete peers which have null TcpClients (they lost conenction)
+            List<Task> listOfTasks = new List<Task>();
+            lock(Peers)
+            {
+                int i = 0;
+                List<int> removePeers = new List<int>();
+                foreach (var peer in Peers)
+                {
+                    if (peer.Client == null)
+                    {
+                        removePeers.Add(i);
                     }
                     else
                     {
-                        Console.WriteLine("Received <{0}> from {1}", data, username);
+                        listOfTasks.Add(peer.BroadcastAsync(bounce, user, msgID, date, msg));
                     }
+                    i++;
                 }
-            }
-            catch (IOException)
-            {
-            }
-            catch (NullReferenceException)
-            {
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-
-
-            lock (Peers)
-            {
-
-                // Disconnect
-                Console.WriteLine("Communication ended with {0}", username);
-                if (Peers[username] != null)
+                foreach (var removeIndex in removePeers)
                 {
-                    Peers[username].Close();
-                    Peers[username].Dispose();
-                    Peers[username] = null;
-                }
-
-            }
-        }
-
-
-        /// <summary>
-        /// Message to broadcast to all known peers
-        /// </summary>
-        /// <param name="message">string to broadcast</param>
-        public void BroadcastMessage(string message)
-        {
-            lock (Peers)
-            {
-                List<string> setToNull = new List<string>();
-                foreach (var peer in Peers)
-                {
-                    try
-                    {
-                        StreamWriter sw = new StreamWriter(peer.Value.GetStream());
-                        sw.WriteLine("BROADCAST:" + message);
-                        sw.Flush();
-                    }
-                    catch (Exception e)
-                    {
-                        if (peer.Value == null)
-                        {
-                            Console.WriteLine("({0} is disconnected)", peer.Key);
-                        }
-                        else if (peer.Value.Connected == false)
-                        {
-                            Console.WriteLine("User {0} appears to be disconnected, ending communication", peer.Key);
-                            peer.Value.Dispose();
-                            peer.Value.Close();
-                            setToNull.Add(peer.Key);
-                        }
-                        else
-                        {
-                            Console.WriteLine(e);
-                        }
-                    }
-                }
-                foreach (var key in setToNull)
-                {
-                    Peers[key] = null;
+                    Peers.RemoveAt(removeIndex);
                 }
             }
-        }
+            await Task.WhenAll(listOfTasks);
 
-
-        /// <summary>
-        /// Adds a peer to our dictionnary (takes care of the lock)
-        /// It will simply update the TcpClient reference if the key already exists
-        /// </summary>
-        /// <param name="username">string username of the client</param>
-        /// <param name="client">TcpClient reference</param>
-        public void AddPeer(string username, TcpClient client)
-        {
-            lock (Peers)
-            {
-                if (Peers.ContainsKey(username))
-                {
-                    Peers[username] = client;
-                }
-                else
-                {
-                    Peers.Add(username, client);
-                }
-            }
         }
     }
 }
