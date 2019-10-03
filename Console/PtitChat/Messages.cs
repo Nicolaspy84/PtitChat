@@ -6,7 +6,7 @@ namespace PtitChat
     public class Messages
     {
         public Dictionary<string, string> MessagesDic = new Dictionary<string, string>();
-        Dictionary<string, int> LastMessagesDic = new Dictionary<string, int>();
+        Dictionary<string, int> LastMessagesDic = new Dictionary<string, int>(); //<peer username, int>
         public int IdMessage;
         public Client user;
 
@@ -35,7 +35,6 @@ namespace PtitChat
         public void UpdateLastMessageDic()
         {
             // for each different user, give id of last message received, when all the ids below have also been received
-            //Dictionary<string, int> lastMessages = new Dictionary<string, int>();
             foreach (string peer in user.Peers.Keys) //gives peers name
             {
                 int nb = 0;
@@ -50,6 +49,18 @@ namespace PtitChat
         public Dictionary<string, int> GetLastMessagesDic()
         {
             return (LastMessagesDic);
+        }
+
+        public int GetLastMessageNb(string username)
+        {
+            if (LastMessagesDic.ContainsKey(username))
+            {
+                return LastMessagesDic[username];
+            }
+            else
+            {
+                return -1;
+            }
         }
     }
 }
