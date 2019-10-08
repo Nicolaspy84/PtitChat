@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Net;
 using System.Threading;
-using System.Net.Sockets;
-using System.Text;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PtitChat
 {
@@ -155,11 +152,22 @@ namespace PtitChat
             thread.Start();
 
 
-            // We wait for messages
+            // We wait for user inputs
             while (true)
             {
-                string message = Console.ReadLine();
-                myClient.BroadcastMessage(message);
+                string request = Console.ReadLine();
+                switch (request)
+                {
+                    case "/peers":
+                        Console.WriteLine(myClient);
+                        break;
+                    case "/users":
+                        Console.WriteLine(User.AllToString());
+                        break;
+                    default:
+                        Task.Run(() => myClient.BroadcastMyRumorAsync(request));
+                        break;
+                }
             }
         }
     }
