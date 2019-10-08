@@ -32,7 +32,6 @@ namespace PtitChat
 
             // Subscribe to events
             Peer.RumorReceivedEvent += BroadcastRumorAsync;
-            Peer.StatusReceivedEvent += ProcessStatusAsync;
 
         }
 
@@ -129,7 +128,8 @@ namespace PtitChat
             Console.WriteLine("Connected to {0}", ipAddress);
             Peer peer = new Peer(client);
             Task.Run(() => peer.ListenAsync());
-            lock(Peers)
+            Task.Run(() => peer.RequestUpdateAsync());
+            lock (Peers)
             {
                 Peers.Add(peer);
             }
@@ -166,63 +166,10 @@ namespace PtitChat
 
 
         /// <summary>
-        /// Broadcasts our current status to all connected peers async.
-        /// </summary>
-        /// <param name="bounce">number of times the status packet has to be exchanged before discarding it</param>
-        /// <returns>void Task</returns>
-        public async Task BroadcastStatusAsync(int bounce)
-        {
-
-            // Create a status packet
-            string packet = User.GetState(Username, bounce);
-
-            // Broadcast it async.
-            List<Task> listOfTasks = new List<Task>();
-            lock (Peers)
-            {
-                int i = 0;
-                List<int> removePeers = new List<int>();
-                foreach (var peer in Peers)
-                {
-                    if (peer.Client == null)
-                    {
-                        removePeers.Add(i);
-                    }
-                    else
-                    {
-                        listOfTasks.Add(peer.SendPacketAsync(packet));
-                    }
-                    i++;
-                }
-                foreach (var removeIndex in removePeers)
-                {
-                    Peers.RemoveAt(removeIndex);
-                }
-            }
-            await Task.WhenAll(listOfTasks);
-
-        }
-
-
-        /// <summary>
-        /// Processes a received status request async.
-        /// </summary>
-        /// <param name="originPeer">Where the packet comes from</param>
-        /// <param name="bounce">Number of times this message has to be broadcasted</param>
-        /// <param name="user">User who originally sent this status request</param>
-        /// <param name="status">Status content of the request</param>
-        /// <returns>void Task</returns>
-        public async Task ProcessStatusAsync(Peer originPeer, int bounce, string user, string status)
-        {
-
-        }
-
-
-        /// <summary>
         /// Broadcasts a received rumor to other peers (all but originPeer) async.
         /// </summary>
         /// <param name="originPeer">origin of the message (who sent it to us, so we won't broadcast the message to him)</param>
-        /// <param name="bounce">Number of times this message has to be broadcasted</param>
+        /// <param name="bounce">Number of times this message has been broadcasted</param>
         /// <param name="user">User who originally sent this message</param>
         /// <param name="msgID">Unique message ID</param>
         /// <param name="date">Message date and time origin</param>
@@ -230,12 +177,8 @@ namespace PtitChat
         public async Task BroadcastRumorAsync(Peer originPeer, int bounce, string user, int msgID, DateTime date, string msg)
         {
 
-            // Decrement our bounce value
-            bounce--;
-            if (bounce < 0)
-            {
-                return;
-            }
+            // Increment our bounce value
+            bounce++;
 
             // Then we can broadcast to all other peers
             // Note : we will delete peers which have null TcpClients (they lost conenction)
@@ -274,7 +217,7 @@ namespace PtitChat
         {
 
             // First we create a new message (for ourself)
-            int bounce = 10;
+            int bounce = 1;
             string user = Username;
             int msgID;
             lock (User.All)
@@ -283,7 +226,7 @@ namespace PtitChat
             }
             DateTime date = DateTime.UtcNow;
             string msg = message;
-            User.NewMessage(null, user, msgID, date, msg);
+            User.NewMessage(null, 0, user, msgID, date, msg);
 
 
             // Then we can broadcast to all peers

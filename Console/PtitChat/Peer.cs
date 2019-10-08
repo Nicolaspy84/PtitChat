@@ -13,7 +13,7 @@ namespace PtitChat
     {
 
         public const string RUMOR = "RUMOR";
-        public const string STATUS = "STATUS";
+        public const string UPDATE = "UPDATE";
         public const string DISCONNECT = "DISC";
         public const string PRIVATEMSG = "PM";
 
@@ -22,7 +22,7 @@ namespace PtitChat
         /// Delegate to handle received (new) rumors events
         /// </summary>
         /// <param name="peer">Origin of the message (who sent it to us)</param>
-        /// <param name="bounce">Number of times this message has to be broadcasted</param>
+        /// <param name="bounce">Number of times this message has been broadcasted</param>
         /// <param name="user">User who originally sent this message</param>
         /// <param name="msgID">Unique message ID</param>
         /// <param name="date">Message date and time origin</param>
@@ -32,26 +32,9 @@ namespace PtitChat
 
 
         /// <summary>
-        /// Delegate to handle received status events
-        /// </summary>
-        /// <param name="peer">Origin of the message (who sent it to us)</param>
-        /// <param name="bounce">Number of times this message has to be broadcasted</param>
-        /// <param name="user">User who originally sent this status</param>
-        /// <param name="status">Status content</param>
-        /// <returns>void Task</returns>
-        public delegate Task StatusReceived(Peer peer, int bounce, string user, string status);
-
-
-        /// <summary>
         /// Event called when a rumor is received by any of our Peers
         /// </summary>
         public static event RumorReceived RumorReceivedEvent;
-
-
-        /// <summary>
-        /// Event called when a status is recived by any of our Peers
-        /// </summary>
-        public static event StatusReceived StatusReceivedEvent;
 
 
         /// <summary>
@@ -136,9 +119,19 @@ namespace PtitChat
 
 
         /// <summary>
+        /// Requests a full update from this peer
+        /// </summary>
+        /// <returns>void Task</returns>
+        public async Task RequestUpdateAsync()
+        {
+            await SendPacketAsync(UPDATE);
+        }
+
+
+        /// <summary>
         /// Sends a rumor to this peer async.
         /// </summary>
-        /// <param name="bounce">Number of times this rumor has to be broadcasted</param>
+        /// <param name="bounce">Number of times this rumor has been broadcasted</param>
         /// <param name="user">User who originally sent this rumor</param>
         /// <param name="msgID">Unique rumor ID</param>
         /// <param name="date">Rumor date and time origin</param>
@@ -202,55 +195,39 @@ namespace PtitChat
                     }
 
                     // Add data info to the user list
-                    bool newMsg = User.NewMessage(this, user, msgID, date, msg);
+                    bool newMsg = User.NewMessage(this, bounce, user, msgID, date, msg);
                     if (newMsg)
                     {
 
                         // Print new message arrival
                         Console.WriteLine("{0}({1}) @<{2}> : {3}", user, msgID, date, msg);
 
-                        // Notify our message arrival
+                        // Notify our new message arrival
                         RumorReceivedEvent(this, bounce, user, msgID, date, msg);
 
                     }
 
                 }
 
-                // Status message
-                else if (dataList.Length > 3 && dataList[0] == STATUS)
+                // Request update
+                else if (dataList.Length == 1 && dataList[0] == UPDATE)
                 {
 
-                    // Parse data
-                    string userReq;
-                    int bounce;
-                    string status = "";
-                    try
+                    // Loop to send every single rumor we know so far
+                    foreach (var packet in User.GetRumorList())
                     {
-                        userReq = dataList[1];
-                        bounce = Int32.Parse(dataList[2]);
-                        if (dataList.Length == 4)
-                        {
-                            status = dataList[3];
-                        }
+                        await SendPacketAsync(packet);
                     }
-                    catch (Exception)
-                    {
-                        Console.WriteLine("Could not parse <{0}> from {1}", data, Client.Client.RemoteEndPoint);
-                        continue;
-                    }
-
-                    // Notify our status arrival
-                    StatusReceivedEvent(this, bounce, userReq, status);
 
                 }
 
-                // Disconnect instruction
+                // Disconnect request
                 else if (dataList.Length == 1 && dataList[0] == DISCONNECT)
                 {
                     break;
                 }
 
-                // Unknown instruction
+                // Unknown request
                 else
                 {
                     Console.WriteLine("Could not process <{0}> from {1}", data, Client.Client.RemoteEndPoint);

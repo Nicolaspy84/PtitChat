@@ -26,12 +26,13 @@ namespace PtitChat
         /// Dispatches the message to the correct User instance
         /// </summary>
         /// <param name="origin">Peer origin of the message (if known)</param>
+        /// <param name="bounce">Number of times this message has been broadcasted to arrive to us</param>
         /// <param name="user">Username</param>
         /// <param name="msgID">Unique message ID</param>
         /// <param name="date">Date and time when the message was created</param>
         /// <param name="msg">Message content</param>
         /// <returns>true if this is an unseen message</returns>
-        public static bool NewMessage(Peer origin, string user, int msgID, DateTime date, string msg)
+        public static bool NewMessage(Peer origin, int bounce, string user, int msgID, DateTime date, string msg)
         {
             lock(All)
             {
@@ -46,6 +47,7 @@ namespace PtitChat
                 if (All[user].AddMessage(msgID, date, msg) && origin != null)
                 {
                     All[user].LatestPeer = origin;
+                    All[user].Distance = bounce;
                     return true;
                 }
 
@@ -78,92 +80,21 @@ namespace PtitChat
 
 
         /// <summary>
-        /// Returns a string representing the current state of the Users
-        /// STATE#USERNAME#BOUNCE#USER1#ID#USER2#ID2#...#USERN#IDN with :
-        /// USERNAME our client's username
-        /// BOUNCE the number of times the message has to be exchanged
-        /// USERI the username of the i'th user
-        /// IDI the next expected message ID from USERI
+        /// Returns all the messages we've received so far (correctly formatted to braodcast them).
+        /// Note : no lock used here (we don't know if it works yet)
         /// </summary>
-        /// <param name="clientUsername">Our own client's username</param>
-        /// <param name="bounce">Number of times the message has to be exchanged</param>
-        /// <returns>The state string</returns>
-        public static string GetState(string clientUsername, int bounce)
+        /// <returns>The list of strings</returns>
+        public static List<string> GetRumorList()
         {
-            string endStr = string.Format("{0}#{1}#{2}#", Peer.STATUS, clientUsername, bounce);
-            lock (All)
+            List<string> rumorList = new List<string>();
+            foreach (var user in All)
             {
-                foreach (var user in All)
+                foreach (var msg in user.Value.Messages)
                 {
-                    endStr += string.Format("{0}:{1}&", user.Key, user.Value.NextExpectedMessageID);
-                }
-                if (All.Count > 0)
-                {
-                    endStr = endStr.Remove(endStr.Length);
-                }
-
-            }
-            return endStr;
-        }
-
-
-        /// <summary>
-        /// Returns all missing message IDs in the provided status compared to our status
-        /// </summary>
-        /// <param name="status">Status string we are comparing our own status to</param>
-        /// <returns>A dictionary for every missing user and the corresponding next missing message ID interval</returns>
-        public static Dictionary<string, Tuple<int, int>> GetMissingMessages(string status)
-        {
-
-            // Create the list to hold missing messages
-            Dictionary<string, Tuple<int, int>> endList = new Dictionary<string, Tuple<int, int>>();
-
-            // Lock users to process
-            lock (All)
-            {
-
-                // Put all user information in the dictionnary
-                foreach (var user in All)
-                {
-                    if (user.Value.NextExpectedMessageID > 0)
-                    {
-                        endList.Add(user.Key, Tuple.Create(0, user.Value.NextExpectedMessageID - 1));
-                    }
-                }
-
-            }
-
-            // If status is not empty, we update our array
-            if (status != "")
-            {
-                string[] statusUsers = status.Split('&');
-                foreach (var statusUser in statusUsers)
-                {
-                    string[] statusSplit = statusUser.Split(':');
-                    string user;
-                    int nextExpectedMessage;
-                    try
-                    {
-                        user = statusSplit[0];
-                        nextExpectedMessage = Int32.Parse(statusSplit[1]);
-                    }
-                    catch (Exception)
-                    {
-                        endList.Clear();
-                        return endList;
-                    }
-                    if (endList.ContainsKey(user) && endList[user].Item2 > nextExpectedMessage)
-                    {
-                        endList[user] = Tuple.Create(nextExpectedMessage, endList[user].Item2);
-                    }
-                    else if (endList.ContainsKey(user) && endList[user].Item2 <= nextExpectedMessage)
-                    {
-                        endList.Remove(user);
-                    }
+                    rumorList.Add(string.Format("{0}#{1}#{2}#{3}#{4}#{5}", Peer.RUMOR, user.Value.Distance, user.Key, msg.Key, msg.Value.Item1, msg.Value.Item2));
                 }
             }
-            
-            return endList;
+            return rumorList;
         }
 
 
@@ -185,7 +116,7 @@ namespace PtitChat
         public override string ToString()
         {
             string endStr = "";
-            endStr += string.Format("From {0} :\n", Username);
+            endStr += string.Format("From {0} via {1} at {2} nodes away :\n", Username, LatestPeerIPString(), Distance);
             foreach (var msg in Messages)
             {
                 endStr += string.Format("   ({0}) @<{1}> -> {2}\n", msg.Key, msg.Value.Item1, msg.Value.Item2);
@@ -221,6 +152,31 @@ namespace PtitChat
         /// Contact this peer to send a direct message to this user.
         /// </summary>
         public Peer LatestPeer;
+
+
+        /// <summary>
+        /// Returns the IP address of our LatestPeer as a string
+        /// </summary>
+        /// <returns>Returns null if no LatestPeer is known (or it is disconnected)</returns>
+        public string LatestPeerIPString()
+        {
+            string returnStr;
+            try
+            {
+                returnStr = LatestPeer.Client.Client.RemoteEndPoint.ToString();
+            }
+            catch (Exception)
+            {
+                returnStr = "null";
+            }
+            return returnStr;
+        }
+
+
+        /// <summary>
+        /// This holds the distance to the peer
+        /// </summary>
+        public int Distance;
 
 
         /// <summary>
