@@ -12,22 +12,46 @@ namespace PtitChat
     public class Peer
     {
 
+        public const string RUMOR = "RUMOR";
+        public const string STATUS = "STATUS";
+        public const string DISCONNECT = "DISC";
+        public const string PRIVATEMSG = "PM";
+
+
         /// <summary>
-        /// Delegate to handle received messages events
+        /// Delegate to handle received rumors events
         /// </summary>
-        /// <param name="peer">origin of the message (who sent it to us)</param>
+        /// <param name="peer">Origin of the message (who sent it to us)</param>
         /// <param name="bounce">Number of times this message has to be broadcasted</param>
         /// <param name="user">User who originally sent this message</param>
         /// <param name="msgID">Unique message ID</param>
         /// <param name="date">Message date and time origin</param>
         /// <param name="msg">Message content</param>
-        public delegate Task MessageReceived(Peer peer, int bounce, string user, int msgID, DateTime date, string msg);
+        /// <returns>void Task</returns>
+        public delegate Task RumorReceived(Peer peer, int bounce, string user, int msgID, DateTime date, string msg);
 
 
         /// <summary>
-        /// Event called when a message is received by any of our Peers
+        /// Delegate to handle received status events
         /// </summary>
-        public static event MessageReceived MessageReceivedEvent;
+        /// <param name="peer">Origin of the message (who sent it to us)</param>
+        /// <param name="bounce">Number of times this message has to be broadcasted</param>
+        /// <param name="user">User who originally sent this status</param>
+        /// <param name="status">Status content</param>
+        /// <returns>void Task</returns>
+        public delegate Task StatusReceived(Peer peer, int bounce, string user, string status);
+
+
+        /// <summary>
+        /// Event called when a rumor is received by any of our Peers
+        /// </summary>
+        public static event RumorReceived RumorReceivedEvent;
+
+
+        /// <summary>
+        /// Event called when a status is recived by any of our Peers
+        /// </summary>
+        public static event StatusReceived StatusReceivedEvent;
 
 
         /// <summary>
@@ -99,26 +123,37 @@ namespace PtitChat
 
 
         /// <summary>
-        /// Broadcasts async. a message to this peer
+        /// Send the given packet to this peer
         /// </summary>
-        /// <param name="bounce">Number of times this message has to broadcast</param>
-        /// <param name="user">User who originally sent this message</param>
-        /// <param name="msgID">Unique message ID</param>
-        /// <param name="date">Message date and time origin</param>
-        /// <param name="msg">Message content</param>
-        /// <returns></returns>
-        public async Task BroadcastAsync(int bounce, string user, int msgID, DateTime date, string msg)
+        /// <param name="packet">The complete string content (packet)</param>
+        /// <returns>void Task</returns>
+        public async Task SendPacketAsync(string packet)
         {
             try
             {
-                string toSend = string.Format("{0}#{1}#{2}#{3}#{4}#{5}", "BROADCAST", bounce, user, msgID, date, msg);
-                await sw.WriteLineAsync(toSend);
+                await sw.WriteLineAsync(packet);
                 await sw.FlushAsync();
             }
             catch (Exception)
             {
                 Dispose();
             }
+        }
+
+
+        /// <summary>
+        /// Sends a rumor to this peer async.
+        /// </summary>
+        /// <param name="bounce">Number of times this rumor has to be broadcasted</param>
+        /// <param name="user">User who originally sent this rumor</param>
+        /// <param name="msgID">Unique rumor ID</param>
+        /// <param name="date">Rumor date and time origin</param>
+        /// <param name="msg">Rumor content</param>
+        /// <returns></returns>
+        public async Task SendRumorAsync(int bounce, string user, int msgID, DateTime date, string msg)
+        {
+            string toSend = string.Format("{0}#{1}#{2}#{3}#{4}#{5}", RUMOR, bounce, user, msgID, date, msg);
+            await SendPacketAsync(toSend);
         }
 
 
@@ -147,8 +182,8 @@ namespace PtitChat
                 // Split data
                 string[] dataList = data.Split('#');
 
-                // Broadcast message of type BROADCAST:BOUNCE:USERNAME:ID:DATE:CONTENT
-                if (dataList.Length == 6 && dataList[0] == "BROADCAST")
+                // Rumor message
+                if (dataList.Length == 6 && dataList[0] == RUMOR)
                 {
 
                     // Parse data
@@ -176,11 +211,40 @@ namespace PtitChat
                     Console.WriteLine("{0}({1}) @<{2}> : {3}", user, msgID, date, msg);
 
                     // Notify our message arrival
-                    MessageReceivedEvent(this, bounce, user, msgID, date, msg);
+                    RumorReceivedEvent(this, bounce, user, msgID, date, msg);
+
+                }
+
+                // Status message
+                else if (dataList.Length > 3 && dataList[0] == STATUS)
+                {
+
+                    // Parse data
+                    string userReq;
+                    int bounce;
+                    string status = "";
+                    try
+                    {
+                        userReq = dataList[1];
+                        bounce = Int32.Parse(dataList[2]);
+                        if (dataList.Length == 4)
+                        {
+                            status = dataList[3];
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Could not parse <{0}> from {1}", data, Client.Client.RemoteEndPoint);
+                        continue;
+                    }
+
+                    // Notify our status arrival
+                    StatusReceivedEvent(this, bounce, userReq, status);
+
                 }
 
                 // Disconnect instruction
-                else if (dataList.Length == 1 && dataList[0] == "DISCONNECT")
+                else if (dataList.Length == 1 && dataList[0] == DISCONNECT)
                 {
                     break;
                 }

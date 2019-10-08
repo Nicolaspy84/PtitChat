@@ -17,7 +17,13 @@ namespace PtitChat
 
 
         /// <summary>
-        /// Dispatches the message to the correct User
+        /// Total number of messages received/saved
+        /// </summary>
+        public static int NbMessages;
+
+
+        /// <summary>
+        /// Dispatches the message to the correct User instance
         /// </summary>
         /// <param name="origin">Peer origin of the message (if known)</param>
         /// <param name="user">Username</param>
@@ -64,6 +70,96 @@ namespace PtitChat
                 }
             }
             return endStr;
+        }
+
+
+        /// <summary>
+        /// Returns a string representing the current state of the Users
+        /// STATE#USERNAME#BOUNCE#USER1#ID#USER2#ID2#...#USERN#IDN with :
+        /// USERNAME our client's username
+        /// BOUNCE the number of times the message has to be exchanged
+        /// USERI the username of the i'th user
+        /// IDI the next expected message ID from USERI
+        /// </summary>
+        /// <param name="clientUsername">Our own client's username</param>
+        /// <param name="bounce">Number of times the message has to be exchanged</param>
+        /// <returns>The state string</returns>
+        public static string GetState(string clientUsername, int bounce)
+        {
+            string endStr = string.Format("{0}#{1}#{2}#", Peer.STATUS, clientUsername, bounce);
+            lock (All)
+            {
+                foreach (var user in All)
+                {
+                    endStr += string.Format("{0}:{1}&", user.Key, user.Value.NextExpectedMessageID);
+                }
+                if (All.Count > 0)
+                {
+                    endStr = endStr.Remove(endStr.Length);
+                }
+
+            }
+            return endStr;
+        }
+
+
+        /// <summary>
+        /// Returns all missing message IDs in the provided status compared to our status
+        /// </summary>
+        /// <param name="status">Status string we are comparing our own status to</param>
+        /// <returns>A dictionary for every missing user and the corresponding next missing message ID interval</returns>
+        public static Dictionary<string, Tuple<int, int>> GetMissingMessages(string status)
+        {
+
+            // Create the list to hold missing messages
+            Dictionary<string, Tuple<int, int>> endList = new Dictionary<string, Tuple<int, int>>();
+
+            // Lock users to process
+            lock (All)
+            {
+
+                // Put all user information in the dictionnary
+                foreach (var user in All)
+                {
+                    if (user.Value.NextExpectedMessageID > 0)
+                    {
+                        endList.Add(user.Key, Tuple.Create(0, user.Value.NextExpectedMessageID - 1));
+                    }
+                }
+
+            }
+
+            // If status is not empty, we update our array
+            if (status != "")
+            {
+                string[] statusUsers = status.Split('&');
+                foreach (var statusUser in statusUsers)
+                {
+                    string[] statusSplit = statusUser.Split(':');
+                    string user;
+                    int nextExpectedMessage;
+                    try
+                    {
+                        user = statusSplit[0];
+                        nextExpectedMessage = Int32.Parse(statusSplit[1]);
+                    }
+                    catch (Exception)
+                    {
+                        endList.Clear();
+                        return endList;
+                    }
+                    if (endList.ContainsKey(user) && endList[user].Item2 > nextExpectedMessage)
+                    {
+                        endList[user] = Tuple.Create(nextExpectedMessage, endList[user].Item2);
+                    }
+                    else if (endList.ContainsKey(user) && endList[user].Item2 <= nextExpectedMessage)
+                    {
+                        endList.Remove(user);
+                    }
+                }
+            }
+            
+            return endList;
         }
 
 
@@ -136,9 +232,17 @@ namespace PtitChat
             {
                 Tuple<DateTime, string> data = new Tuple<DateTime, string>(dateTime, message);
                 Messages.Add(messageID, data);
-                if (messageID == NextExpectedMessageID)
+                NbMessages++;
+                while (true)
                 {
-                    NextExpectedMessageID++;
+                    if (Messages.ContainsKey(NextExpectedMessageID))
+                    {
+                        NextExpectedMessageID++;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
                 return true;
             }

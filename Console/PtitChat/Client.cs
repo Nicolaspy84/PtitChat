@@ -31,7 +31,8 @@ namespace PtitChat
             }
 
             // Subscribe to events
-            Peer.MessageReceivedEvent += BroadcastMessageAsync;
+            Peer.RumorReceivedEvent += BroadcastRumorAsync;
+            Peer.StatusReceivedEvent += ProcessStatusAsync;
 
         }
 
@@ -159,12 +160,66 @@ namespace PtitChat
                 {
                     Peers.Add(peer);
                 }
+
             }
         }
 
 
         /// <summary>
-        /// Broadcasts async. a received message to other peers (all but originPeer)
+        /// Broadcasts our current status to all connected peers async.
+        /// </summary>
+        /// <param name="bounce">number of times the status packet has to be exchanged before discarding it</param>
+        /// <returns>void Task</returns>
+        public async Task BroadcastStatusAsync(int bounce)
+        {
+
+            // Create a status packet
+            string packet = User.GetState(Username, bounce);
+
+            // Broadcast it async.
+            List<Task> listOfTasks = new List<Task>();
+            lock (Peers)
+            {
+                int i = 0;
+                List<int> removePeers = new List<int>();
+                foreach (var peer in Peers)
+                {
+                    if (peer.Client == null)
+                    {
+                        removePeers.Add(i);
+                    }
+                    else
+                    {
+                        listOfTasks.Add(peer.SendPacketAsync(packet));
+                    }
+                    i++;
+                }
+                foreach (var removeIndex in removePeers)
+                {
+                    Peers.RemoveAt(removeIndex);
+                }
+            }
+            await Task.WhenAll(listOfTasks);
+
+        }
+
+
+        /// <summary>
+        /// Processes a received status request async.
+        /// </summary>
+        /// <param name="originPeer">Where the packet comes from</param>
+        /// <param name="bounce">Number of times this message has to be broadcasted</param>
+        /// <param name="user">User who originally sent this status request</param>
+        /// <param name="status">Status content of the request</param>
+        /// <returns>void Task</returns>
+        public async Task ProcessStatusAsync(Peer originPeer, int bounce, string user, string status)
+        {
+
+        }
+
+
+        /// <summary>
+        /// Broadcasts a received rumor to other peers (all but originPeer) async.
         /// </summary>
         /// <param name="originPeer">origin of the message (who sent it to us, so we won't broadcast the message to him)</param>
         /// <param name="bounce">Number of times this message has to be broadcasted</param>
@@ -172,7 +227,7 @@ namespace PtitChat
         /// <param name="msgID">Unique message ID</param>
         /// <param name="date">Message date and time origin</param>
         /// <param name="msg">Message content</param>
-        public async Task BroadcastMessageAsync(Peer originPeer, int bounce, string user, int msgID, DateTime date, string msg)
+        public async Task BroadcastRumorAsync(Peer originPeer, int bounce, string user, int msgID, DateTime date, string msg)
         {
 
             // Decrement our bounce value
@@ -197,7 +252,7 @@ namespace PtitChat
                     }
                     else if (peer != originPeer)
                     {
-                        listOfTasks.Add(peer.BroadcastAsync(bounce, user, msgID, date, msg));
+                        listOfTasks.Add(peer.SendRumorAsync(bounce, user, msgID, date, msg));
                     }
                     i++;
                 }
@@ -212,10 +267,10 @@ namespace PtitChat
 
 
         /// <summary>
-        /// Message to broadcast to all known peers async.
+        /// Rumor to broadcast to all known peers async.
         /// </summary>
-        /// <param name="message">string to broadcast</param>
-        public async Task BroadcastMyMessageAsync(string message)
+        /// <param name="message">rumor to broadcast</param>
+        public async Task BroadcastMyRumorAsync(string message)
         {
 
             // First we create a new message (for ourself)
@@ -246,7 +301,7 @@ namespace PtitChat
                     }
                     else
                     {
-                        listOfTasks.Add(peer.BroadcastAsync(bounce, user, msgID, date, msg));
+                        listOfTasks.Add(peer.SendRumorAsync(bounce, user, msgID, date, msg));
                     }
                     i++;
                 }
