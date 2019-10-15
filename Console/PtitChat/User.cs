@@ -11,101 +11,18 @@ namespace PtitChat
     {
 
         /// <summary>
-        /// Static dictionary holding all instances of the User class
-        /// </summary>
-        public static Dictionary<string, User> All = new Dictionary<string, User>();
-
-
-        /// <summary>
-        /// Total number of messages received/saved
-        /// </summary>
-        public static int NbMessages;
-
-
-        /// <summary>
-        /// Dispatches the message to the correct User instance
-        /// </summary>
-        /// <param name="origin">Peer origin of the message (if known)</param>
-        /// <param name="bounce">Number of times this message has been broadcasted to arrive to us</param>
-        /// <param name="user">Username</param>
-        /// <param name="msgID">Unique message ID</param>
-        /// <param name="date">Date and time when the message was created</param>
-        /// <param name="msg">Message content</param>
-        /// <returns>true if this is an unseen message</returns>
-        public static bool NewMessage(Peer origin, int bounce, string user, int msgID, DateTime date, string msg)
-        {
-            lock(All)
-            {
-
-                // Create a new user if this one is unknown
-                if (All.ContainsKey(user) == false)
-                {
-                    All[user] = new User(user);
-                }
-
-                // Add the message to our dictionary, and if this message is a new one, update our LatestPeer
-                if (All[user].AddMessage(msgID, date, msg) && origin != null)
-                {
-                    All[user].LatestPeer = origin;
-                    All[user].Distance = bounce;
-                    return true;
-                }
-
-            }
-
-            return false;
-        }
-
-
-        /// <summary>
-        /// Returns a string describing all user data
-        /// </summary>
-        /// <returns>Description string</returns>
-        public static string AllToString()
-        {
-            string endStr = "";
-            lock (All)
-            {
-                foreach (var user in All)
-                {
-                    endStr += string.Format("{0}\n", user.Value);
-                }
-                if (All.Count > 0)
-                {
-                    endStr = endStr.Remove(endStr.Length - 1);
-                }
-            }
-            return endStr;
-        }
-
-
-        /// <summary>
-        /// Returns all the messages we've received so far (correctly formatted to braodcast them).
-        /// Note : no lock used here (we don't know if it works yet)
-        /// </summary>
-        /// <returns>The list of strings</returns>
-        public static List<string> GetRumorList()
-        {
-            List<string> rumorList = new List<string>();
-            foreach (var user in All)
-            {
-                foreach (var msg in user.Value.Messages)
-                {
-                    rumorList.Add(string.Format("{0}#{1}#{2}#{3}#{4}#{5}", Peer.RUMOR, user.Value.Distance, user.Key, msg.Key, msg.Value.Item1, msg.Value.Item2));
-                }
-            }
-            return rumorList;
-        }
-
-
-        /// <summary>
         /// The default constructor requires a username
         /// </summary>
         /// <param name="username">unique username of the user</param>
-        public User(string username)
+        /// <param name="initPMs">set it to true to initialize reception of PMs (default is false)</param>
+        public User(string username, bool initPMs = false)
         {
             Username = username;
             NextExpectedMessageID = 0;
+            if (initPMs)
+            {
+                PrivateMessages = new Dictionary<string, List<Tuple<DateTime, string>>>();
+            }
         }
 
 
@@ -138,6 +55,14 @@ namespace PtitChat
         /// (the key corresponds to the unique ID of the message)
         /// </summary>
         public Dictionary<int, Tuple<DateTime, string>> Messages = new Dictionary<int, Tuple<DateTime, string>>();
+
+
+        /// <summary>
+        /// Dictionary only initialized for ourself (where Username == Client.Username).
+        /// The key is the username of the user who sent us this pm.
+        /// The value is a list of tuples of date time and string to store every pm.
+        /// </summary>
+        public Dictionary<string, List<Tuple<DateTime, string>>> PrivateMessages;
 
 
         /// <summary>
@@ -192,7 +117,7 @@ namespace PtitChat
             {
                 Tuple<DateTime, string> data = new Tuple<DateTime, string>(dateTime, message);
                 Messages.Add(messageID, data);
-                NbMessages++;
+                AllUsers.NbMessages++;
                 while (true)
                 {
                     if (Messages.ContainsKey(NextExpectedMessageID))
@@ -207,6 +132,32 @@ namespace PtitChat
                 return true;
             }
             return false;
+        }
+
+
+        /// <summary>
+        /// Call this method when we receive a new PM
+        /// </summary>
+        /// <param name="user">the origin of the PM</param>
+        /// <param name="dateTime">the date and time of the creation of the message</param>
+        /// <param name="content">PM content</param>
+        public void AddPrivateMessage(string user, DateTime dateTime, string content)
+        {
+            // Check that our dictionary has been init properly
+            if (PrivateMessages == null)
+            {
+                Console.WriteLine("ERROR : when receiving a new PM, user {0} does not have an initialized PM dictionary", Username);
+                return;
+            }
+
+            // Create a new list if the key does not exist
+            if (PrivateMessages.ContainsKey(user) == false)
+            {
+                PrivateMessages.Add(user, new List<Tuple<DateTime, string>>());
+            }
+
+            // Now we can safely add this PM to our list
+            PrivateMessages[user].Add(new Tuple<DateTime, string>(dateTime, content));
         }
     }
 }

@@ -13,6 +13,11 @@ namespace PtitChat
     {
 
         /// <summary>
+        /// Our username
+        /// </summary>
+        public static string Username;
+
+        /// <summary>
         /// Default constructor
         /// </summary>
         /// <param name="username">Unique username to represent us</param>
@@ -25,21 +30,16 @@ namespace PtitChat
             Port = port;
 
             // Add ourself to the user list
-            lock (User.All)
+            lock (AllUsers.All)
             {
-                User.All.Add(username, new User(username));
+                AllUsers.All.Add(username, new User(username, true));
             }
 
             // Subscribe to events
             Peer.RumorReceivedEvent += BroadcastRumorAsync;
+            Peer.PMReceivedEvent += SendPMAsync;
 
         }
-
-
-        /// <summary>
-        /// Our username shared with other clients
-        /// </summary>
-        public readonly string Username;
 
 
         /// <summary>
@@ -220,13 +220,13 @@ namespace PtitChat
             int bounce = 1;
             string user = Username;
             int msgID;
-            lock (User.All)
+            lock (AllUsers.All)
             {
-                msgID = User.All[Username].NextExpectedMessageID;
+                msgID = AllUsers.All[Username].NextExpectedMessageID;
             }
             DateTime date = DateTime.UtcNow;
             string msg = message;
-            User.NewMessage(null, 0, user, msgID, date, msg);
+            AllUsers.NewMessage(null, 0, user, msgID, date, msg);
 
 
             // Then we can broadcast to all peers
@@ -255,6 +255,67 @@ namespace PtitChat
             }
             await Task.WhenAll(listOfTasks);
 
+        }
+
+
+        /// <summary>
+        /// Sends a new PM we created to the correct destination
+        /// </summary>
+        /// <param name="destination">destination user</param>
+        /// <param name="content">PM content</param>
+        /// <returns>void Task</returns>
+        public async Task SendMyPMAsync(string destination, string content)
+        {
+
+            // Return if we don't know this user
+            if (destination == Username || AllUsers.All.ContainsKey(destination) == false)
+            {
+                Console.WriteLine("We do not know user {0}", destination);
+                return;
+            }
+
+            // Return if we don't know the destination to this user
+            if (AllUsers.All[destination].LatestPeer == null)
+            {
+                Console.WriteLine("We do not know a path to {0}", destination);
+                return;
+            }
+
+            // Prepare data
+            string origin = Username;
+            DateTime date = DateTime.UtcNow;
+
+            // Await for result
+            await AllUsers.All[destination].LatestPeer.SendPMAsync(origin, destination, date, content);
+        }
+
+
+        /// <summary>
+        /// Transmit a PM
+        /// </summary>
+        /// <param name="peer">who transmitted the PM to us</param>
+        /// <param name="origin">origin of the PM</param>
+        /// <param name="destination">destination of the PM</param>
+        /// <param name="date">date and time of creation</param>
+        /// <param name="content">content of PM</param>
+        /// <returns>void Task</returns>
+        public async Task SendPMAsync(Peer peer, string origin, string destination, DateTime date, string content)
+        {
+
+            // Return if we don't know this user
+            if (destination == Username || AllUsers.All.ContainsKey(destination) == false)
+            {
+                return;
+            }
+
+            // Return if we don't know the destination to this user
+            if (AllUsers.All[destination].LatestPeer == null)
+            {
+                return;
+            }
+
+            // Await for result
+            await AllUsers.All[destination].LatestPeer.SendPMAsync(origin, destination, date, content);
         }
     }
 }

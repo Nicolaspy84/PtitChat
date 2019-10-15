@@ -156,13 +156,24 @@ namespace PtitChat
             while (true)
             {
                 string request = Console.ReadLine();
-                switch (request)
+                switch (request.Split(' ')[0])
                 {
                     case "/peers":
                         Console.WriteLine(myClient);
                         break;
                     case "/users":
-                        Console.WriteLine(User.AllToString());
+                        Console.WriteLine(AllUsers.AllToString());
+                        break;
+                    // Use /pm username message content
+                    case "/pm":
+                        string[] split = request.Split(new char[] { ' ' }, 3);
+                        if (split.Length != 3)
+                        {
+                            break;
+                        }
+                        string userDest = split[1];
+                        string content = split[2];
+                        Task.Run(() => myClient.SendMyPMAsync(userDest, content));
                         break;
                     default:
                         Task.Run(() => myClient.BroadcastMyRumorAsync(request));

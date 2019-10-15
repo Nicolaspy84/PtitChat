@@ -32,9 +32,27 @@ namespace PtitChat
 
 
         /// <summary>
+        /// Delegate to handle received PMs events
+        /// </summary>
+        /// <param name="peer">origin of the PM (who transmitted it to us)</param>
+        /// <param name="origin">origin of the PM</param>
+        /// <param name="destination">destination of the PM</param>
+        /// <param name="date">PM date and time</param>
+        /// <param name="content">content of the PM</param>
+        /// <returns>void Task</returns>
+        public delegate Task PMReceived(Peer peer, string origin, string destination, DateTime date, string content);
+
+
+        /// <summary>
         /// Event called when a rumor is received by any of our Peers
         /// </summary>
         public static event RumorReceived RumorReceivedEvent;
+
+
+        /// <summary>
+        /// Event called whenever we receive a PM
+        /// </summary>
+        public static event PMReceived PMReceivedEvent;
 
 
         /// <summary>
@@ -129,6 +147,21 @@ namespace PtitChat
 
 
         /// <summary>
+        /// Sends a PM from origin to destination through this peer async.
+        /// </summary>
+        /// <param name="origin">origin of the message</param>
+        /// <param name="destination">destination of the message</param>
+        /// <param name="date">date of creation of the message</param>
+        /// <param name="content">content of the message</param>
+        /// <returns></returns>
+        public async Task SendPMAsync(string origin, string destination, DateTime date, string content)
+        {
+            string toSend = string.Format("{0}#{1}#{2}#{3}#{4}", PRIVATEMSG, origin, destination, date, content);
+            await SendPacketAsync(toSend);
+        }
+
+
+        /// <summary>
         /// Sends a rumor to this peer async.
         /// </summary>
         /// <param name="bounce">Number of times this rumor has been broadcasted</param>
@@ -195,7 +228,7 @@ namespace PtitChat
                     }
 
                     // Add data info to the user list
-                    bool newMsg = User.NewMessage(this, bounce, user, msgID, date, msg);
+                    bool newMsg = AllUsers.NewMessage(this, bounce, user, msgID, date, msg);
                     if (newMsg)
                     {
 
@@ -214,11 +247,45 @@ namespace PtitChat
                 {
 
                     // Loop to send every single rumor we know so far
-                    foreach (var packet in User.GetRumorList())
+                    foreach (var packet in AllUsers.GetRumorList())
                     {
                         await SendPacketAsync(packet);
                     }
 
+                }
+
+                // PM
+                else if (dataList.Length == 5 && dataList[0] == PRIVATEMSG)
+                {
+
+                    // Parse data
+                    string origin = dataList[1];
+                    string destination = dataList[2];
+                    DateTime date;
+                    string content = dataList[4];
+                    try
+                    {
+                        date = DateTime.Parse(dataList[3]);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Could not parse <{0}> from {1}", data, Client.Client.RemoteEndPoint);
+                        continue;
+                    }
+
+                    // Check if we are the destination of the PM
+                    if (destination == PtitChat.Client.Username)
+                    {
+                        // Notify the arrival
+                        Console.WriteLine("{0}(PM) @<{1}> : {2}", origin, date, content);
+
+                        // Add this new PM to our PM dict
+                        AllUsers.All[PtitChat.Client.Username].AddPrivateMessage(origin, date, content);
+                    }
+
+                    // PM receive event
+                    PMReceivedEvent(this, origin, destination, date, content);
+                    
                 }
 
                 // Disconnect request
