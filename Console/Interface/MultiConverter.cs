@@ -8,12 +8,12 @@ using System.Windows.Data;
 
 namespace Interface
 {
-    public class ConnexionConverter : IMultiValueConverter
+    public class MultiConverter : IMultiValueConverter
     {
+
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            Tuple<object, object, object> tuple = new Tuple<object, object, object>(values[0], values[1], values[2]);
-            return tuple;
+            return values.Clone();
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

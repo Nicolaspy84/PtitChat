@@ -68,8 +68,15 @@ namespace Interface
 
         }
 
+        /// <summary>
+        /// Event to handle the modifications of client properties for data binding
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>
+        /// Method called when a property is modified for data binding
+        /// </summary>
+        /// <param name="str"></param>
         public void NotifyPropertyChanged([CallerMemberName] string str = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(str));

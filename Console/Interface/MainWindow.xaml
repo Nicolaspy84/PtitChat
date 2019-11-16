@@ -12,6 +12,7 @@
     <Window.Resources>
         <local:MessageConverter x:Key="MessageConverter"></local:MessageConverter>
         <local:UserConverter x:Key="UserConverter"></local:UserConverter>
+        <local:MultiConverter x:Key="MultiConverter"></local:MultiConverter>
     </Window.Resources>
     <Grid RenderTransformOrigin="0.306,0.499" Background="#FF1D1889">
         <Grid.Resources>
@@ -79,15 +80,21 @@
         </Grid>
         <StackPanel Grid.Row="1" Grid.Column="1">
             <StackPanel Height="210" Background="White" Margin="20 20 20 10">
-                <TextBlock Text="{Binding Path=(local:AllUsers.All), Converter={StaticResource MessageConverter}}" Height="210" Margin="10"
+                <TextBlock  Height="210" Margin="10"
                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                             ScrollViewer.VerticalScrollBarVisibility="Auto" 
                             Foreground="#FF1d1889" FontWeight="Bold" TextWrapping="Wrap">
+                    <TextBlock.Text>
+                        <MultiBinding Converter="{StaticResource MessageConverter}">
+                            <Binding Path="(local:AllUsers.All)"></Binding>
+                            <Binding ElementName="ConversationsListBox" Path="SelectedItem"></Binding>
+                        </MultiBinding>
+                    </TextBlock.Text>
                 </TextBlock>
             </StackPanel>
             <StackPanel Height="55">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10 10 10 0">
-                    <Label >Message :</Label>
+                    <Label Content="Message :"/>
                     <TextBox Width="444" x:Name="messageTextBox">
                         <TextBox.Resources>
                             <Style TargetType="{x:Type Border}">
@@ -96,8 +103,13 @@
                         </TextBox.Resources>
                     </TextBox>
                     <Button x:Name="sendButton" Background="White" Margin="10 0 0 0" 
-                            Command="{Binding SendMessageCommand}" CommandParameter="{Binding ElementName=messageTextBox}" Width="61"
-                            Foreground="#FF1D1889" FontWeight="Bold">Envoi
+                            Command="{Binding SendMessageCommand}" Width="61" Foreground="#FF1D1889" FontWeight="Bold" Content="Envoi">
+                        <Button.CommandParameter>
+                            <MultiBinding Converter="{StaticResource MultiConverter}">
+                                <Binding ElementName="messageTextBox"></Binding>
+                                <Binding ElementName="ConversationsListBox" Path="SelectedItem"></Binding>
+                            </MultiBinding>
+                        </Button.CommandParameter>
                         <Button.Resources>
                             <Style TargetType="{x:Type Border}">
                                 <Setter Property="CornerRadius" Value="3"></Setter>
@@ -109,10 +121,8 @@
         </StackPanel>
         <StackPanel Grid.Row="1" Grid.Column="0" Background="White" Margin="20">
             <Label Foreground="#FF1D1889">Connexions : </Label>
-            <TextBlock Margin="10 10" Height="209" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                       ScrollViewer.VerticalScrollBarVisibility="Auto"
-                       Foreground="#FF1d1889" FontWeight="Bold"
-                       TextWrapping="Wrap" Text="{Binding Path=(local:AllUsers.All), Converter={StaticResource UserConverter}}"></TextBlock>
+            <ListBox x:Name="ConversationsListBox"
+                ItemsSource="{Binding Path=(local:AllUsers.All), Converter={StaticResource UserConverter}}" Height="204"></ListBox>
         </StackPanel>
 
 
