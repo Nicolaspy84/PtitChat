@@ -28,21 +28,5 @@ namespace Interface
         }
 
 
-        private void AddPeerButton_Click(object sender, RoutedEventArgs e)
-        {
-            var client = this.DataContext as Client;
-            string ipAddress = peerAdressTextBox.Text;
-            Thread th = new Thread(new ParameterizedThreadStart(client.ConnectToPeer));
-            th.Start(ipAddress);
-            peerAdressTextBox.Text = string.Empty;
-        }
-
-        private void SendButton_Click(object sender, RoutedEventArgs e)
-        {
-            var client = this.DataContext as Client;
-            string message = messageTextBox.Text;
-            messageTextBox.Text = string.Empty;
-            Task.Run(() => client.BroadcastMyRumorAsync(message));
-        }
     }
 }
