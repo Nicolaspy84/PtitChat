@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -38,6 +39,7 @@ namespace PtitChat
             // Subscribe to events
             Peer.RumorReceivedEvent += BroadcastRumorAsync;
             Peer.PMReceivedEvent += SendPMAsync;
+            Peer.FileChunkReceivedEvent += SendFileAsync;
 
         }
 
@@ -316,6 +318,71 @@ namespace PtitChat
 
             // Await for result
             await AllUsers.All[destination].LatestPeer.SendPMAsync(origin, destination, date, content);
+        }
+
+
+        /// <summary>
+        /// Sends the provided file to the destination async.
+        /// </summary>
+        /// <param name="destination">destination of the file</param>
+        /// <param name="filePath">file name and path to be sent, with complete extension (../files/hello.txt)</param>
+        /// <returns>void Task</returns>
+        public async Task SendMyFileAsync(string destination, string filePath)
+        {
+            // Return if we don't know this user
+            if (destination == Username || AllUsers.All.ContainsKey(destination) == false)
+            {
+                Console.WriteLine("We do not know user {0}", destination);
+                return;
+            }
+
+            // Return if we don't know the destination to this user
+            if (AllUsers.All[destination].LatestPeer == null)
+            {
+                Console.WriteLine("We do not know a path to {0}", destination);
+                return;
+            }
+
+            // Return if the provided file does not exist
+            if (File.Exists(filePath) == false)
+            {
+                Console.WriteLine("File {0} does not appear to exist on disk", filePath);
+                return;
+            }
+
+            // Await for result
+            await AllUsers.All[destination].LatestPeer.SendFileAsync(Username, destination, filePath);
+        }
+
+
+        /// <summary>
+        /// Transmit the file to the correct destination async.
+        /// </summary>
+        /// <param name="peer">origin of the message on the network</param>
+        /// <param name="origin">origin of the file chunk</param>
+        /// <param name="destination">destination of the file chunk</param>
+        /// <param name="fileName">file name</param>
+        /// <param name="bufferSize">data packet buffer size in bytes</param>
+        /// <param name="chunkID">chunk ID</param>
+        /// <param name="nbChunks">total number of chunks for this file</param>
+        /// <param name="chunkData">byte array containing data</param>
+        /// <returns>void Task</returns>
+        public async Task SendFileAsync(Peer peer, string origin, string destination, string fileName, int bufferSize, long chunkID, long nbChunks, byte[] chunkData)
+        {
+            // Return if we don't know this user
+            if (destination == Username || AllUsers.All.ContainsKey(destination) == false)
+            {
+                return;
+            }
+
+            // Return if we don't know the destination to this user
+            if (AllUsers.All[destination].LatestPeer == null)
+            {
+                return;
+            }
+
+            // Await for result
+            await AllUsers.All[destination].LatestPeer.SendFileChunkAsync(origin, destination, fileName, bufferSize, chunkID, nbChunks, chunkData);
         }
     }
 }

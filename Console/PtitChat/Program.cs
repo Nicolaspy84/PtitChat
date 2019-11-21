@@ -164,7 +164,7 @@ namespace PtitChat
                     case "/users":
                         Console.WriteLine(AllUsers.AllToString());
                         break;
-                    // Use /pm username message content
+                    // Use /pm username message_content
                     case "/pm":
                         string[] split = request.Split(new char[] { ' ' }, 3);
                         if (split.Length != 3)
@@ -174,6 +174,17 @@ namespace PtitChat
                         string userDest = split[1];
                         string content = split[2];
                         Task.Run(() => myClient.SendMyPMAsync(userDest, content));
+                        break;
+                    // Use /sendfile username filepath
+                    case "/sendfile":
+                        string[] splitReq = request.Split(new char[] { ' ' }, 3);
+                        if (splitReq.Length != 3)
+                        {
+                            break;
+                        }
+                        string userDestSF = splitReq[1];
+                        string filePath = splitReq[2];
+                        Task.Run(() => myClient.SendMyFileAsync(userDestSF, filePath));
                         break;
                     default:
                         Task.Run(() => myClient.BroadcastMyRumorAsync(request));
