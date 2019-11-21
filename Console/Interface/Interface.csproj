@@ -35,8 +35,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>
-    </StartupObject>
+    <StartupObject>Interface.App</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -61,7 +60,6 @@
     </ApplicationDefinition>
     <Compile Include="AllUsers.cs" />
     <Compile Include="ClientViewModel.cs" />
-    <Compile Include="ConnexionConverter.cs" />
     <Compile Include="ConnexionWindow.xaml.cs">
       <DependentUpon>ConnexionWindow.xaml</DependentUpon>
     </Compile>
@@ -125,7 +123,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>if exist "$(TargetPath)" move "$(TargetPath)" "$(TargetPath)_%25date:~0,2%25%25date:~3,2%25%25date:~6,4%25_%25time:~0,2%25%25time:~3,2%25%25time:~6,2%25 "
-</PreBuildEvent>
+    <PreBuildEvent>
+    </PreBuildEvent>
   </PropertyGroup>
 </Project>
