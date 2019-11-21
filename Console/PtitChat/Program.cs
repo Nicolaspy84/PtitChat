@@ -6,7 +6,7 @@ namespace PtitChat
 {
     class MainClass
     {
-      
+
         /// <summary>
         /// Entry point of the program
         /// </summary>

@@ -36,6 +36,8 @@
     <Compile Include="Peer.cs" />
     <Compile Include="User.cs" />
     <Compile Include="AllUsers.cs" />
+    <Compile Include="File.cs" />
+    <Compile Include="AllFiles.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -54,6 +54,24 @@ namespace PtitChat
 
 
         /// <summary>
+        /// Adds a potential new user we heard of by the origin Peer
+        /// </summary>
+        /// <param name="origin">the Peer who told us about the existence of this user</param>
+        /// <param name="user">user string name</param>
+        public static void AddPotentialNewUser(Peer origin, string user)
+        {
+            lock(All)
+            {
+                // Create a new user if this one is unknown
+                if (All.ContainsKey(user) == false)
+                {
+                    All[user] = new User(user) { LatestPeer = origin };
+                }
+            }
+        }
+
+
+        /// <summary>
         /// Returns a string describing all user data
         /// </summary>
         /// <returns>Description string</returns>

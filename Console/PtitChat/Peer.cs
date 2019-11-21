@@ -20,7 +20,8 @@ namespace PtitChat
         public const string FILETRANSFER = "FT";
 
 
-        public const int CHUNKSIZE = 32;
+        public const int CHUNKSIZE = 8192;
+        public const int DELAY = 5;
 
 
         /// <summary>
@@ -163,21 +164,18 @@ namespace PtitChat
         /// <returns>void Task</returns>
         public async Task SendPacketAsync(string header, byte[] chunk)
         {
+            // Send header
             await SendPacketAsync(header);
+
+            // Pause before we send the chunk
+            System.Threading.Thread.Sleep(DELAY);
+
+            // Send chunk
             await Client.GetStream().WriteAsync(chunk, 0, chunk.Length);
             await Client.GetStream().FlushAsync();
-            Console.WriteLine("SENT {0} as {1}", header, Encoding.UTF8.GetString(chunk));
 
-            /*
-            byte[] headerArray = Encoding.UTF8.GetBytes(header + "\n");
-            byte[] finalPacket = new byte[headerArray.Length + packet.Length];
-            headerArray.CopyTo(finalPacket, 0);
-            packet.CopyTo(finalPacket, headerArray.Length);
-            await Client.GetStream().WriteAsync(finalPacket, 0, finalPacket.Length);
-            await Client.GetStream().FlushAsync();
-            await SendPacketAsync("END\n");
-            Console.WriteLine("SENT {0} as {1}", header, Encoding.UTF8.GetString(finalPacket));
-            */
+            // Notify
+            Console.WriteLine("SENT {0} with chunk of size {1} bytes", header, chunk.Length);
         }
 
 
@@ -225,6 +223,9 @@ namespace PtitChat
 
                 // Finally we can send data
                 await SendFileChunkAsync(origin, destination, fileName, bufferSize, chunkID, nbChunks, buffer);
+
+                // Pause before we send the next chunk
+                System.Threading.Thread.Sleep(DELAY);
 
                 // Update fsPointer and chunk ID
                 fsPointer += bufferSize;
@@ -300,9 +301,7 @@ namespace PtitChat
                 string data;
                 try
                 {
-                    Console.WriteLine("WAITING FOR MESSAGE");
                     data = await sr.ReadLineAsync();
-                    Console.WriteLine("MESSAGE {0} arrived", data);
                 }
                 catch (Exception)
                 {
@@ -388,6 +387,9 @@ namespace PtitChat
                         // Notify the arrival
                         Console.WriteLine("{0}(PM) @<{1}> : {2}", origin, date, content);
 
+                        // Add this user
+                        AllUsers.AddPotentialNewUser(this, origin);
+
                         // Add this new PM to our PM dict
                         AllUsers.All[PtitChat.Client.Username].AddPrivateMessage(origin, date, content);
                     }
@@ -421,20 +423,19 @@ namespace PtitChat
 
                     // Now we can wait for the data chunk
                     byte[] chunkData = new byte[bufferSize];
-                    Console.WriteLine("WAITING FOR CHUNK");
                     Client.GetStream().Read(chunkData, 0, bufferSize);
-
-
-                    Console.WriteLine("RECEIVED {0} bytes:", chunkData.Length);
-                    Console.WriteLine(Encoding.UTF8.GetString(chunkData));
-
-
 
                     // Check if we are the destination of the file transfer
                     if (destination == PtitChat.Client.Username)
                     {
                         // Notify the arrival
                         Console.WriteLine("{0}(ID:{1}) {2}", origin, chunkID, fileName);
+
+                        // If we recontruct the file properly, notify it
+                        if (AllFiles.NewChunk(origin, fileName, nbChunks, chunkID, chunkData))
+                        {
+                            Console.WriteLine("Reconstructed {0} properly", fileName);
+                        }
                     }
 
                     // Transmit the message

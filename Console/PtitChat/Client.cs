@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -288,7 +287,7 @@ namespace PtitChat
             DateTime date = DateTime.UtcNow;
 
             // Add this message to messages we sent
-            AllUsers.All[Username].AddPrivateMessage(origin, date, content);
+            AllUsers.All[Username].AddPrivateMessageSent(destination, date, content);
 
             // Await for result
             await AllUsers.All[destination].LatestPeer.SendPMAsync(origin, destination, date, content);
@@ -347,7 +346,7 @@ namespace PtitChat
             }
 
             // Return if the provided file does not exist
-            if (File.Exists(filePath) == false)
+            if (System.IO.File.Exists(filePath) == false)
             {
                 Console.WriteLine("File {0} does not appear to exist on disk", filePath);
                 return;
