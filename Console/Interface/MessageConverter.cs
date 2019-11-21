@@ -10,60 +10,75 @@ namespace Interface
 {
     /// <summary>
     /// Converter used to display both private and non private messages
+    /// The first argument is the dictionnary All
+    /// The second argument is the conversation selected (it can be either "Tous" for the 
+    /// global chat or the name of a user for private messages)
     /// </summary>
     class MessageConverter : IMultiValueConverter
     {
         public object Convert(object[] value, Type targetType, object parameter, CultureInfo culture)
         {
-            string result = string.Empty;
             var all = value[0] as Dictionary<string, User>;
-            List<Tuple<DateTime, string>> messages = new List<Tuple<DateTime, string>>();
-            foreach(KeyValuePair<string, User> user in all)
+            // If there is no conversation selected or if the global conversation is selected,
+            // we display the global chat 
+            if (value[1] == null || (string)value[1] == "Tous")
             {
-                Dictionary<int, Tuple<DateTime, string>> userMessages = user.Value.Messages;
-                foreach(KeyValuePair<int, Tuple<DateTime, string>> message in userMessages)
+                string result = string.Empty;
+                List<Tuple<DateTime, string>> messages = new List<Tuple<DateTime, string>>();
+                foreach (KeyValuePair<string, User> user in all)
                 {
-                    (DateTime date, string messageString) = message.Value;
-                    messages.Add(new Tuple<DateTime, string>(date, (user.Key + " : " + messageString)));
+                    Dictionary<int, Tuple<DateTime, string>> userMessages = user.Value.Messages;
+                    foreach (KeyValuePair<int, Tuple<DateTime, string>> message in userMessages)
+                    {
+                        (DateTime date, string messageString) = message.Value;
+                        messages.Add(new Tuple<DateTime, string>(date, (user.Key + " : " + messageString)));
+                    }
                 }
-            }
-            foreach(Tuple<DateTime, string> t in messages)
-            {
-                result += t.Item1.ToString() + "  " + t.Item2 + "\n";
-            }
-            if (value[1] == null)
-            {
+                foreach (Tuple<DateTime, string> t in messages)
+                {
+                    result += t.Item1.ToString() + "  " + t.Item2 + "\n";
+                }
                 return result;
             }
             else
             {
+                // If we are in a private conversation, we display the private messages between
+                // the user and the other user
                 string origin = (string)value[1];
-                if (origin == "Tous")
+                string messages = string.Empty;
+                List<Tuple<DateTime, string>> privateMessages = new List<Tuple<DateTime, string>>();
+                foreach(KeyValuePair<string, User> user in all)
                 {
-                    return result;
-                }
-                else
-                {
-                    string privateMessages = string.Empty;
-                    foreach(KeyValuePair<string, User> user in all)
+                    if (user.Key == Client.Username)
                     {
-                        if (user.Key == Client.Username)
+                        User currentUser = user.Value;
+                        foreach(KeyValuePair<string, List<Tuple<DateTime, string>>> messagesFromUser in currentUser.PrivateMessages)
                         {
-                            User currentUser = user.Value;
-                            foreach(KeyValuePair<string, List<Tuple<DateTime, string>>> messagesFromUser in currentUser.PrivateMessages)
+                            if (messagesFromUser.Key == origin)
                             {
-                                if (messagesFromUser.Key == origin)
+                                foreach(Tuple<DateTime, string> privateMessage in messagesFromUser.Value)
                                 {
-                                    foreach(Tuple<DateTime, string> privateMessage in messagesFromUser.Value)
-                                    {
-                                        privateMessages += privateMessage.Item1.ToString() + "  " + privateMessage.Item2 + "\n";
-                                    }
+                                    privateMessages.Add(privateMessage);
                                 }
                             }
                         }
+                        foreach(KeyValuePair<string, List<Tuple<DateTime, string>>> privateMessagesSent in currentUser.PrivateMessagesSent)
+                        {
+                            if (privateMessagesSent.Key == origin)
+                            {
+                                foreach(Tuple<DateTime, string> privateMessageSent in privateMessagesSent.Value)
+                                {
+                                    privateMessages.Add(privateMessageSent);
+                                }
+                            }
+                        }
+                        foreach(Tuple<DateTime, string> privateMessage in privateMessages)
+                        {
+                            messages += privateMessage.Item1.ToString() + "  " + privateMessage.Item2 + "\n";
+                        }
                     }
-                    return privateMessages;
                 }
+                return messages;
             }
         }
 

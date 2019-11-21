@@ -22,6 +22,7 @@ namespace Interface
             if (initPMs)
             {
                 PrivateMessages = new Dictionary<string, List<Tuple<DateTime, string>>>();
+                PrivateMessagesSent = new Dictionary<string, List<Tuple<DateTime, string>>>();
             }
         }
 
@@ -64,6 +65,12 @@ namespace Interface
         /// </summary>
         public Dictionary<string, List<Tuple<DateTime, string>>> PrivateMessages;
 
+        /// <summary>
+        /// Dictionary only initialized for ourself (where Username == Client.Username).
+        /// The key is the username of the user who we sent the pm to.
+        /// The value is a list of tuples of date time and string to store every pm sent.
+        /// </summary>
+        public Dictionary<string, List<Tuple<DateTime, string>>> PrivateMessagesSent;
 
         /// <summary>
         /// This holds the next message ID we are expecting from this user.
@@ -159,6 +166,33 @@ namespace Interface
 
             // Now we can safely add this PM to our list
             PrivateMessages[user].Add(new Tuple<DateTime, string>(dateTime, content));
+            AllUsers.OnAllChanged(EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Call this method when we send a new PM
+        /// </summary>
+        /// <param name="user">the destination of the PM</param>
+        /// <param name="dateTime">the date and time of the creation of the message</param>
+        /// <param name="content">PM content</param>
+        public void AddPrivateMessageSent(string user, DateTime dateTime, string content)
+        {
+            // Check that our dictionary has been init properly
+            if (PrivateMessagesSent == null)
+            {
+                Console.WriteLine("ERROR : when sending a new PM, user {0} does not have an initialized PM sent dictionary", Username);
+                return;
+            }
+
+            // Create a new list if the key does not exist
+            if (PrivateMessagesSent.ContainsKey(user) == false)
+            {
+                PrivateMessagesSent.Add(user, new List<Tuple<DateTime, string>>());
+            }
+
+            // Now we can safely add this PM to our list
+            PrivateMessagesSent[user].Add(new Tuple<DateTime, string>(dateTime, content));
+            AllUsers.OnAllChanged(EventArgs.Empty);
         }
     }
 }
