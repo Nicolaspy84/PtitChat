@@ -84,8 +84,8 @@ namespace Interface
                 {
                     connexionCommand = new RelayCommand<object>((obj) =>
                     {
-                        var param = (Tuple<object, object, object>) obj;
-                        string username = ((System.Windows.Controls.TextBox)param.Item1).Text;
+                        var param = (object[])obj;
+                        string username = ((System.Windows.Controls.TextBox)param[0]).Text;
                         if (username == string.Empty)
                         {
                             ErrorWindow ewnd = new ErrorWindow("Le nom d'utilisateur ne peut pas être vide");
@@ -95,7 +95,7 @@ namespace Interface
                         int port = -1;
                         try
                         {
-                            port = Int32.Parse(((System.Windows.Controls.TextBox)param.Item2).Text);
+                            port = Int32.Parse(((System.Windows.Controls.TextBox)param[1]).Text);
 
                         }
                         catch (FormatException)
@@ -104,7 +104,7 @@ namespace Interface
                             ewnd.Show();
                             return;
                         }
-                        ConnexionWindow cwnd = (ConnexionWindow)param.Item3;
+                        ConnexionWindow cwnd = (ConnexionWindow)param[2];
                         Client = new Client(username, port);
                         Thread thread = new Thread(new ThreadStart(Client.ListenForConnections));
                         thread.Start();
