@@ -287,6 +287,9 @@ namespace PtitChat
             string origin = Username;
             DateTime date = DateTime.UtcNow;
 
+            // Add this message to messages we sent
+            AllUsers.All[Username].AddPrivateMessage(origin, date, content);
+
             // Await for result
             await AllUsers.All[destination].LatestPeer.SendPMAsync(origin, destination, date, content);
         }
