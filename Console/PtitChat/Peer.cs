@@ -156,20 +156,28 @@ namespace PtitChat
 
 
         /// <summary>
-        /// Send the given packet with header to this peer
+        /// Send the given packet with header and chunk to this peer
         /// </summary>
         /// <param name="header">Header</param>
-        /// <param name="packet">Array of bytes to send as a packet</param>
+        /// <param name="chunk">Array of bytes (a chunk) to send as a packet</param>
         /// <returns>void Task</returns>
-        public async Task SendPacketAsync(string header, byte[] packet)
+        public async Task SendPacketAsync(string header, byte[] chunk)
         {
+            await SendPacketAsync(header);
+            await Client.GetStream().WriteAsync(chunk, 0, chunk.Length);
+            await Client.GetStream().FlushAsync();
+            Console.WriteLine("SENT {0} as {1}", header, Encoding.UTF8.GetString(chunk));
+
+            /*
             byte[] headerArray = Encoding.UTF8.GetBytes(header + "\n");
             byte[] finalPacket = new byte[headerArray.Length + packet.Length];
             headerArray.CopyTo(finalPacket, 0);
             packet.CopyTo(finalPacket, headerArray.Length);
             await Client.GetStream().WriteAsync(finalPacket, 0, finalPacket.Length);
             await Client.GetStream().FlushAsync();
+            await SendPacketAsync("END\n");
             Console.WriteLine("SENT {0} as {1}", header, Encoding.UTF8.GetString(finalPacket));
+            */
         }
 
 
@@ -414,11 +422,9 @@ namespace PtitChat
                     // Now we can wait for the data chunk
                     byte[] chunkData = new byte[bufferSize];
                     Console.WriteLine("WAITING FOR CHUNK");
-                    await Client.GetStream().ReadAsync(chunkData, 0, bufferSize);
+                    Client.GetStream().Read(chunkData, 0, bufferSize);
 
 
-
-                    Console.WriteLine(data);
                     Console.WriteLine("RECEIVED {0} bytes:", chunkData.Length);
                     Console.WriteLine(Encoding.UTF8.GetString(chunkData));
 
