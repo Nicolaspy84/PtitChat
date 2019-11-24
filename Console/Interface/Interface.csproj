@@ -58,6 +58,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AllFiles.cs" />
     <Compile Include="AllUsers.cs" />
     <Compile Include="ClientViewModel.cs" />
     <Compile Include="ConnexionWindow.xaml.cs">
@@ -66,6 +67,7 @@
     <Compile Include="ErrorWindow.xaml.cs">
       <DependentUpon>ErrorWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="File.cs" />
     <Compile Include="MessageConverter.cs" />
     <Compile Include="Messages.cs" />
     <Compile Include="MultiConverter.cs" />
