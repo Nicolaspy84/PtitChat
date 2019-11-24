@@ -24,19 +24,27 @@ namespace Interface
             if (value[1] == null || (string)value[1] == "Tous")
             {
                 string result = string.Empty;
-                List<Tuple<DateTime, string>> messages = new List<Tuple<DateTime, string>>();
+                List<Messages> messages = new List<Messages>();
                 foreach (KeyValuePair<string, User> user in all)
                 {
                     Dictionary<int, Tuple<DateTime, string>> userMessages = user.Value.Messages;
+                    string username = string.Empty;
+                    if (user.Key == Client.Username)
+                    {
+                        username = "Moi";
+                    }
+                    else
+                    {
+                        username = user.Key;
+                    }
                     foreach (KeyValuePair<int, Tuple<DateTime, string>> message in userMessages)
                     {
-                        (DateTime date, string messageString) = message.Value;
-                        messages.Add(new Tuple<DateTime, string>(date, (user.Key + " : " + messageString)));
+                        messages.Add(new Messages(username, message.Value.Item2, message.Value.Item1));
                     }
                 }
-                foreach (Tuple<DateTime, string> t in messages)
+                foreach (Messages message in messages)
                 {
-                    result += t.Item1.ToString() + "  " + t.Item2 + "\n";
+                    result += message.ToString();
                 }
                 return result;
             }
@@ -46,7 +54,7 @@ namespace Interface
                 // the user and the other user
                 string origin = (string)value[1];
                 string messages = string.Empty;
-                List<Tuple<DateTime, string>> privateMessages = new List<Tuple<DateTime, string>>();
+                List<Messages> privateMessages = new List<Messages>();
                 foreach(KeyValuePair<string, User> user in all)
                 {
                     if (user.Key == Client.Username)
@@ -58,7 +66,7 @@ namespace Interface
                             {
                                 foreach(Tuple<DateTime, string> privateMessage in messagesFromUser.Value)
                                 {
-                                    privateMessages.Add(privateMessage);
+                                    privateMessages.Add(new Messages(origin, privateMessage.Item2, privateMessage.Item1));
                                 }
                             }
                         }
@@ -68,13 +76,14 @@ namespace Interface
                             {
                                 foreach(Tuple<DateTime, string> privateMessageSent in privateMessagesSent.Value)
                                 {
-                                    privateMessages.Add(privateMessageSent);
+                                    privateMessages.Add(new Messages("Moi", privateMessageSent.Item2, privateMessageSent.Item1));
                                 }
                             }
                         }
-                        foreach(Tuple<DateTime, string> privateMessage in privateMessages)
+                        privateMessages.Sort();
+                        foreach(Messages message in privateMessages)
                         {
-                            messages += privateMessage.Item1.ToString() + "  " + privateMessage.Item2 + "\n";
+                            messages += message.ToString();
                         }
                     }
                 }
