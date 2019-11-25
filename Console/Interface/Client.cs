@@ -339,6 +339,8 @@ namespace Interface
             string origin = Username;
             DateTime date = DateTime.UtcNow;
 
+            AllUsers.All[Username].AddPrivateMessageSent(destination, date, content);
+
             // Await for result
             await AllUsers.All[destination].LatestPeer.SendPMAsync(origin, destination, date, content);
         }
