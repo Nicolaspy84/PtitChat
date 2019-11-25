@@ -42,6 +42,7 @@ namespace Interface
                         messages.Add(new Messages(username, message.Value.Item2, message.Value.Item1));
                     }
                 }
+                messages.Sort();
                 foreach (Messages message in messages)
                 {
                     result += message.ToString();

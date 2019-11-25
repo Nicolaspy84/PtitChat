@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Interface"
         mc:Ignorable="d"
-        Title="PtitChat le S" Height="450" Width="800" Background="White">
+        Title="PtitChat le S" Height="450" Width="800" Background="White" ResizeMode="NoResize">
     <Window.DataContext>
         <local:ClientViewModel></local:ClientViewModel>
     </Window.DataContext>
@@ -95,7 +95,7 @@
             <StackPanel Height="55">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10 10 10 0">
                     <Label Content="Message :"/>
-                    <TextBox Width="444" x:Name="messageTextBox">
+                    <TextBox Width="320" x:Name="messageTextBox">
                         <TextBox.Resources>
                             <Style TargetType="{x:Type Border}">
                                 <Setter Property="CornerRadius" Value="3"></Setter>
@@ -110,6 +110,14 @@
                                 <Binding ElementName="ConversationsListBox" Path="SelectedItem"></Binding>
                             </MultiBinding>
                         </Button.CommandParameter>
+                        <Button.Resources>
+                            <Style TargetType="{x:Type Border}">
+                                <Setter Property="CornerRadius" Value="3"></Setter>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                    <Button Background="White" Foreground="#FF1D1889" FontWeight="Bold" Content="Envoyer un fichier" Margin="10 0"
+                            Command="{Binding SendFileCommand}" CommandParameter="{Binding ElementName=ConversationsListBox, Path=SelectedItem}">
                         <Button.Resources>
                             <Style TargetType="{x:Type Border}">
                                 <Setter Property="CornerRadius" Value="3"></Setter>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -183,6 +184,44 @@ namespace Interface
                     });
                 }
                 return sendMessageCommand;
+            }
+        }
+
+        private ICommand sendFileCommand;
+
+        public ICommand SendFileCommand
+        {
+            get
+            {
+                if (sendFileCommand == null)
+                {
+                    sendFileCommand = new RelayCommand<object>((obj) =>
+                    {
+                        if (obj == null)
+                        {
+                            ErrorWindow ewnd = new ErrorWindow("Sélectionnez un destinataire !");
+                            ewnd.Show();
+                        }
+                        else
+                        {
+                            string destination = (string)obj;
+                            if (destination == "Tous")
+                            {
+                                ErrorWindow ewnd = new ErrorWindow("Sélectionnez un destinataire !");
+                                ewnd.Show();
+                            }
+                            else
+                            {
+                                OpenFileDialog dlg = new OpenFileDialog();
+                                if (dlg.ShowDialog() == true)
+                                {
+                                    Task.Run(() => Client.SendMyFileAsync(destination, dlg.FileName));
+                                }
+                            }
+                        }
+                    });
+                }
+                return sendFileCommand;
             }
         }
 
