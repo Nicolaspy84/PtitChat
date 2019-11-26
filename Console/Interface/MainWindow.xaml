@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Interface"
         mc:Ignorable="d"
-        Title="PtitChat le S" Height="450" Width="800" Background="White">
+        Title="PtitChat" Height="450" Width="800" Background="White" ResizeMode="NoResize">
     <Window.DataContext>
         <local:ClientViewModel></local:ClientViewModel>
     </Window.DataContext>
@@ -88,6 +88,7 @@
                         <MultiBinding Converter="{StaticResource MessageConverter}">
                             <Binding Path="(local:AllUsers.All)"></Binding>
                             <Binding ElementName="ConversationsListBox" Path="SelectedItem"></Binding>
+                            <Binding Path="(local:AllFiles.All)"></Binding>
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
@@ -95,7 +96,7 @@
             <StackPanel Height="55">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10 10 10 0">
                     <Label Content="Message :"/>
-                    <TextBox Width="444" x:Name="messageTextBox">
+                    <TextBox Width="320" x:Name="messageTextBox">
                         <TextBox.Resources>
                             <Style TargetType="{x:Type Border}">
                                 <Setter Property="CornerRadius" Value="3"></Setter>
@@ -116,17 +117,21 @@
                             </Style>
                         </Button.Resources>
                     </Button>
+                    <Button Background="White" Foreground="#FF1D1889" FontWeight="Bold" Content="Envoyer un fichier" Margin="10 0"
+                            Command="{Binding SendFileCommand}" CommandParameter="{Binding ElementName=ConversationsListBox, Path=SelectedItem}">
+                        <Button.Resources>
+                            <Style TargetType="{x:Type Border}">
+                                <Setter Property="CornerRadius" Value="3"></Setter>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
                 </StackPanel>
             </StackPanel>
         </StackPanel>
         <StackPanel Grid.Row="1" Grid.Column="0" Background="White" Margin="20">
-            <Label Foreground="#FF1D1889">Connexions : </Label>
+            <Label Foreground="#FF1D1889">Conversations :</Label>
             <ListBox x:Name="ConversationsListBox"
-                ItemsSource="{Binding Path=(local:AllUsers.All), Converter={StaticResource UserConverter}}" Height="204"></ListBox>
+                ItemsSource="{Binding Path=(local:AllUsers.All), Converter={StaticResource UserConverter}}" Height="239"></ListBox>
         </StackPanel>
-
-
-
-
     </Grid>
 </Window>

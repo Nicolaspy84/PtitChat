@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Interface
@@ -16,6 +17,11 @@ namespace Interface
         public const string UPDATE = "UPDATE";
         public const string DISCONNECT = "DISC";
         public const string PRIVATEMSG = "PM";
+        public const string FILETRANSFER = "FT";
+
+
+        public const int CHUNKSIZE = 8192;
+        public const int DELAY = 5;
 
 
         /// <summary>
@@ -44,6 +50,21 @@ namespace Interface
 
 
         /// <summary>
+        /// Delegate to handle received file chunks received events
+        /// </summary>
+        /// <param name="peer">origin of the message on the network</param>
+        /// <param name="origin">origin of the file chunk</param>
+        /// <param name="destination">destination of the file chunk</param>
+        /// <param name="fileName">file name</param>
+        /// <param name="bufferSize">data packet buffer size in bytes</param>
+        /// <param name="chunkID">chunk ID</param>
+        /// <param name="nbChunks">total number of chunks for this file</param>
+        /// <param name="chunkData">byte array containing data</param>
+        /// <returns>void Task</returns>
+        public delegate Task FileChunkReceived(Peer peer, string origin, string destination, string fileName, int bufferSize, long chunkID, long nbChunks, byte[] chunkData);
+
+
+        /// <summary>
         /// Event called when a rumor is received by any of our Peers
         /// </summary>
         public static event RumorReceived RumorReceivedEvent;
@@ -53,6 +74,12 @@ namespace Interface
         /// Event called whenever we receive a PM
         /// </summary>
         public static event PMReceived PMReceivedEvent;
+
+
+        /// <summary>
+        /// Eveent called whenever we receive a file chunk
+        /// </summary>
+        public static event FileChunkReceived FileChunkReceivedEvent;
 
 
         /// <summary>
@@ -66,7 +93,6 @@ namespace Interface
             try
             {
                 sr = new StreamReader(Client.GetStream());
-                sw = new StreamWriter(Client.GetStream());
             }
             catch (Exception e)
             {
@@ -84,7 +110,6 @@ namespace Interface
             {
                 Console.WriteLine("Disposing of {0}", Client.Client.RemoteEndPoint);
                 sr.Close();
-                sw.Close();
                 Client.Close();
                 Client.Dispose();
                 Client = null;
@@ -119,20 +144,38 @@ namespace Interface
 
 
         /// <summary>
-        /// Network stream writer
-        /// </summary>
-        private readonly StreamWriter sw;
-
-
-        /// <summary>
         /// Send the given packet to this peer
         /// </summary>
         /// <param name="packet">The complete string content (packet)</param>
         /// <returns>void Task</returns>
         public async Task SendPacketAsync(string packet)
         {
-            await sw.WriteLineAsync(packet);
-            await sw.FlushAsync();
+            byte[] packetArray = Encoding.UTF8.GetBytes(packet + "\n");
+            await Client.GetStream().WriteAsync(packetArray, 0, packetArray.Length);
+            await Client.GetStream().FlushAsync();
+        }
+
+
+        /// <summary>
+        /// Send the given packet with header and chunk to this peer
+        /// </summary>
+        /// <param name="header">Header</param>
+        /// <param name="chunk">Array of bytes (a chunk) to send as a packet</param>
+        /// <returns>void Task</returns>
+        public async Task SendPacketAsync(string header, byte[] chunk)
+        {
+            // Send header
+            await SendPacketAsync(header);
+
+            // Pause before we send the chunk
+            System.Threading.Thread.Sleep(DELAY);
+
+            // Send chunk
+            await Client.GetStream().WriteAsync(chunk, 0, chunk.Length);
+            await Client.GetStream().FlushAsync();
+
+            // Notify
+            Console.WriteLine("SENT {0} with chunk of size {1} bytes", header, chunk.Length);
         }
 
 
@@ -143,6 +186,71 @@ namespace Interface
         public async Task RequestUpdateAsync()
         {
             await SendPacketAsync(UPDATE);
+        }
+
+
+        /// <summary>
+        /// Sends the provided file to the destination through this peer (we assume the file exists on the disk)
+        /// </summary>
+        /// <param name="origin">origin of the file</param>
+        /// <param name="destination">destination of the file</param>
+        /// <param name="filePath">complete file path with file name and extension</param>
+        /// <returns>void Task</returns>
+        public async Task SendFileAsync(string origin, string destination, string filePath)
+        {
+            // First we get the name of the file
+            string fileName = Path.GetFileName(filePath);
+
+            // Current chunk ID
+            long chunkID = 0;
+
+            // Open the file as a file stream and put our pointer at the beginning
+            FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            long fsPointer = 0;
+            long nbChunks = (int)Math.Ceiling((float)fs.Length / (float)CHUNKSIZE);
+
+            // For as as long as we are not at the end
+            while (fsPointer != fs.Length)
+            {
+                // Compute the remaining buffer size
+                int bufferSize = (int)(fs.Length - fsPointer < CHUNKSIZE ? fs.Length - fsPointer : CHUNKSIZE);
+
+                // Create a buffer at the right size
+                byte[] buffer = new byte[bufferSize];
+                fs.Seek(fsPointer, SeekOrigin.Begin);
+                fs.Read(buffer, 0, bufferSize);
+
+                // Finally we can send data
+                await SendFileChunkAsync(origin, destination, fileName, bufferSize, chunkID, nbChunks, buffer);
+
+                // Pause before we send the next chunk
+                System.Threading.Thread.Sleep(DELAY);
+
+                // Update fsPointer and chunk ID
+                fsPointer += bufferSize;
+                chunkID++;
+            }
+        }
+
+
+        /// <summary>
+        /// Sends the file chunk to destination through this peer async.
+        /// </summary>
+        /// <param name="origin">origin of the file chunk</param>
+        /// <param name="destination">destination of the file chunk</param>
+        /// <param name="fileName">file name</param>
+        /// <param name="bufferSize">data packet buffer size in bytes</param>
+        /// <param name="chunkID">chunk ID</param>
+        /// <param name="nbChunks">total number of chunks for this file</param>
+        /// <param name="chunkData">byte array containing data</param>
+        /// <returns></returns>
+        public async Task SendFileChunkAsync(string origin, string destination, string fileName, int bufferSize, long chunkID, long nbChunks, byte[] chunkData)
+        {
+            // Now we can prepare our header
+            string headerToSend = string.Format("{0}#{1}#{2}#{3}#{4}#{5}#{6}", FILETRANSFER, origin, destination, fileName, bufferSize, chunkID, nbChunks);
+
+            // Finally we can send data
+            await SendPacketAsync(headerToSend, chunkData);
         }
 
 
@@ -193,7 +301,6 @@ namespace Interface
                 try
                 {
                     data = await sr.ReadLineAsync();
-                    // Console.WriteLine("IN => {0}", data);
                 }
                 catch (Exception)
                 {
@@ -279,12 +386,59 @@ namespace Interface
                         // Notify the arrival
                         Console.WriteLine("{0}(PM) @<{1}> : {2}", origin, date, content);
 
+                        // Add this user
+                        AllUsers.AddPotentialNewUser(this, origin);
+
                         // Add this new PM to our PM dict
                         AllUsers.All[Interface.Client.Username].AddPrivateMessage(origin, date, content);
                     }
 
                     // PM receive event
                     PMReceivedEvent(this, origin, destination, date, content);
+
+                }
+
+                // File chunk
+                else if (dataList.Length == 7 && dataList[0] == FILETRANSFER)
+                {
+                    // Parse data
+                    string origin = dataList[1];
+                    string destination = dataList[2];
+                    string fileName = dataList[3];
+                    int bufferSize;
+                    long chunkID;
+                    long nbChunks;
+                    try
+                    {
+                        bufferSize = int.Parse(dataList[4]);
+                        chunkID = long.Parse(dataList[5]);
+                        nbChunks = long.Parse(dataList[6]);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Could not parse <{0}> from {1}", data, Client.Client.RemoteEndPoint);
+                        continue;
+                    }
+
+                    // Now we can wait for the data chunk
+                    byte[] chunkData = new byte[bufferSize];
+                    Client.GetStream().Read(chunkData, 0, bufferSize);
+
+                    // Check if we are the destination of the file transfer
+                    if (destination == Interface.Client.Username)
+                    {
+                        // Notify the arrival
+                        Console.WriteLine("{0}(ID:{1}) {2}", origin, chunkID, fileName);
+
+                        // If we recontruct the file properly, notify it
+                        if (AllFiles.NewChunk(origin, fileName, nbChunks, chunkID, chunkData))
+                        {
+                            Console.WriteLine("Reconstructed {0} properly", fileName);
+                        }
+                    }
+
+                    // Transmit the message
+                    FileChunkReceivedEvent(this, origin, destination, fileName, bufferSize, chunkID, nbChunks, chunkData);
 
                 }
 

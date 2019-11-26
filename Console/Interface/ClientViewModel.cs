@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -88,7 +89,7 @@ namespace Interface
                         string username = ((System.Windows.Controls.TextBox)param[0]).Text;
                         if (username == string.Empty)
                         {
-                            ErrorWindow ewnd = new ErrorWindow("Le nom d'utilisateur ne peut pas être vide");
+                            MessageWindow ewnd = new MessageWindow("Le nom d'utilisateur ne peut pas être vide");
                             ewnd.Show();
                             return;
                         }
@@ -100,7 +101,7 @@ namespace Interface
                         }
                         catch (FormatException)
                         {
-                            ErrorWindow ewnd = new ErrorWindow("Le port est invalide");
+                            MessageWindow ewnd = new MessageWindow("Le port est invalide");
                             ewnd.Show();
                             return;
                         }
@@ -170,7 +171,7 @@ namespace Interface
                         else
                         {
                             var destination = (string)parameters[1];
-                            if (destination == "Tous")
+                            if (destination == "Tous" || destination == "Fichiers")
                             {
                                 Task.Run(() => Client.BroadcastMyRumorAsync(message));
                             }
@@ -183,6 +184,50 @@ namespace Interface
                     });
                 }
                 return sendMessageCommand;
+            }
+        }
+
+        /// <summary>
+        /// Command to send files
+        /// The first argument is the destination, it needs to be a username as we can only send file to a single user
+        /// </summary>
+        private ICommand sendFileCommand;
+
+        public ICommand SendFileCommand
+        {
+            get
+            {
+                if (sendFileCommand == null)
+                {
+                    sendFileCommand = new RelayCommand<object>((obj) =>
+                    {
+                        if (obj == null)
+                        {
+                            MessageWindow ewnd = new MessageWindow("Sélectionnez un destinataire !");
+                            ewnd.Show();
+                        }
+                        else
+                        {
+                            string destination = (string)obj;
+                            if (destination == "Tous" || destination == "Fichiers")
+                            {
+                                MessageWindow ewnd = new MessageWindow("Sélectionnez un destinataire !");
+                                ewnd.Show();
+                            }
+                            else
+                            {
+                                OpenFileDialog dlg = new OpenFileDialog();
+                                if (dlg.ShowDialog() == true)
+                                { 
+                                    Task.Run(() => Client.SendMyFileAsync(destination, dlg.FileName));
+                                    MessageWindow mwnd = new MessageWindow("Fichier envoyé !");
+                                    mwnd.Show();
+                                }
+                            }
+                        }
+                    });
+                }
+                return sendFileCommand;
             }
         }
 

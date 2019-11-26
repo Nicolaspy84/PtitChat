@@ -42,11 +42,23 @@ namespace Interface
                         messages.Add(new Messages(username, message.Value.Item2, message.Value.Item1));
                     }
                 }
+                messages.Sort();
                 foreach (Messages message in messages)
                 {
                     result += message.ToString();
                 }
                 return result;
+            }
+            else if ((string)value[1] == "Fichiers")
+            {
+                string filesReceived = string.Empty;
+                var allFiles = value[2] as Dictionary<string, File>;
+                foreach (KeyValuePair<string, File> file in allFiles)
+                {
+                    filesReceived += "Fichier reçu : " + file.Key + "\n";
+                }
+                return filesReceived;
+
             }
             else
             {

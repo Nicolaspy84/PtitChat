@@ -17,9 +17,9 @@ namespace Interface
     /// <summary>
     /// Logique d'interaction pour ErrorWindow.xaml
     /// </summary>
-    public partial class ErrorWindow : Window
+    public partial class MessageWindow : Window
     {
-        public ErrorWindow(string message)
+        public MessageWindow(string message)
         {
             InitializeComponent();
             errorMessageLabel.Content = message;

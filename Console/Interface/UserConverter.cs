@@ -18,7 +18,8 @@ namespace Interface
         {
             ObservableCollection<string> conversations = new ObservableCollection<string>
             {
-                "Tous"
+                "Tous",
+                "Fichiers"
             };
             var all = value as Dictionary<string, User>;
             foreach(KeyValuePair<string, User> user in all)
