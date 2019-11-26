@@ -83,7 +83,7 @@ namespace PtitChat
         /// </summary>
         /// <param name="destination">folder destination</param>
         /// <returns>true if the file was reconstructed properly</returns>
-        public bool ReconstructFile(string destination = "download/")
+        public bool ReconstructFile(string destination = "downloads/")
         {
             // For every chunk needed
             for (long i = 0; i < nbChunks; i++)
@@ -94,6 +94,9 @@ namespace PtitChat
                     return false;
                 }
             }
+
+            // Check if the destination folder exists
+            System.IO.Directory.CreateDirectory(destination);
 
             // Delete the file if it exists.
             if (System.IO.File.Exists(destination + filename))

@@ -175,7 +175,7 @@ namespace PtitChat
             await Client.GetStream().FlushAsync();
 
             // Notify
-            Console.WriteLine("SENT {0} with chunk of size {1} bytes", header, chunk.Length);
+            // Console.WriteLine("SENT {0} with chunk of size {1} bytes", header, chunk.Length);
         }
 
 
