@@ -9,17 +9,34 @@ Summary:
   b) Run project with terminal
 
 
-## Presentation
+## Introduction
 
-With the PtitChat application you can
-- Join a chat room, by connecting to a peer wich is already in
-- Send and receive private messages
-- Send and receive files 
+The PtitChat application is a decentralized chat room system, where you can :
+- Join a general chat room and chat with anyone on this network
+- Send and receive private messages to/from anyone on your network
+- Send and receive files to/from anyone on your network
 
-PtitChat does not have a server, the messages are transmitted throught the peers in order to be readen by all users.
+PtitChat does not work with a server, it's a decentralized system. Just run the application and connect to anyone else to create your own network and share messages!
 
-### Message and file transmission
-------expliquer les rumeurs -----
+## How it works
+
+### Users
+This system is a decentralized chat system. It creates and handles any number of users. A "user" is defined by a unique username and represents a physical person, we therefore assume that people agree to use different usernames.
+
+### Peers
+Users are connected to each others by connection sockets, that we call "peers". Together, peers can form multiple dynamic networks, which can have any shapes : new peers can directly connect to other peers (via a TCP socket), and can disconnect at any moment from its network, closing all of its connections.
+
+### Rumors
+Users can send messages to every other user on a general chat by sending "rumors". When a user sends a rumor on the network, it will be broadcasted to every one of its connected peers. Then if those peers have not seen this rumor yet they will broadcast it again to every one of their peers, and so on. This makes sure every peer of this network will see the new rumor. Finally, if 2 disconnected networks reconnect (usually a new peer will establish a connection in between the 2 networks), they will share all their rumors, thus merging into a single network.
+
+### Private messages
+Users can also send "private messages" to other users. When new rumors are received by peers, they update their routing table : for every user of the network, they know which connected peer they have to communicate with in order to send a direct message to this user (because this peer itself has a routing table and knows who to contact next to transmit the message). Therefore, when a user sends a private message to another user, the message follows a single route, which is assumed to be the fastest one (so there's no broadcasting like in the rumors' case).
+
+### File sharing
+Users can also share "files" with other users. A user can decide to send any file to another user. When he does so, the file is divided into chunks of fixed byte size, which are then sent one by one to their destination, in the same way private messages are sent. Once the destination user has received all the chunks, he will reconstruct the file and save it in a downloads folder.
+
+### How multiple networks work together
+When you start an instance of the program, you essentially first create your own little network. In this network, you are alone (a single node). You can send rumors, but for now, you will be the only one to see them. Then once you decide to connect to another peer, you merge your network with this new network (by exchanging with this peer all rumors known so far and spreading the new ones on our respective networks).
 
 
 ## Installation and run
