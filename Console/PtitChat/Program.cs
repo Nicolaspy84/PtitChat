@@ -113,20 +113,20 @@ namespace PtitChat
 
 
             // Ask the user if he knows peer adresses and if he'd like to connect to them
-            Console.WriteLine("Would you like to add peer addresses ? (O/N)");
-            string answer = "O";
+            Console.WriteLine("Would you like to add peer addresses ? (Y/N)");
+            string answer = "Y";
             if (string.IsNullOrEmpty(peersArg))
             {
                 answer = Console.ReadLine();
             }
             else
             {
-                Console.WriteLine("O");
+                Console.WriteLine("Y");
             }
 
 
             // If we know peers, we try to connect to them
-            if (answer == "O" || answer == "o")
+            if (answer == "Y" || answer == "y")
             {
                 Console.WriteLine("Specify addresses you would like to connect to (separate with spaces) :");
                 if (string.IsNullOrEmpty(peersArg))
