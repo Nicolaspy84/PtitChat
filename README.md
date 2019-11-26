@@ -5,7 +5,7 @@ Welcome to PtitChat, our peer-to-peer chat application to chat with your friends
 Summary:
 1. Presentation
 2. How it works
-3. Installation and run\
+3. Install and run\
     a) Run project with interface \
     b) Run project with terminal
 
@@ -40,7 +40,7 @@ Users can also share "files" with other users. A user can decide to send any fil
 When you start an instance of the program, you essentially first create your own little network. In this network, you are alone (a single node). You can send rumors, but for now, you will be the only one to see them. Then once you decide to connect to another peer, you merge your network with this new network (by exchanging with this peer all rumors known so far and spreading the new ones on our respective networks).
 
 
-## 2. Installation and run
+## 2. Install and run
 
 ### a) Run project with interface
 
