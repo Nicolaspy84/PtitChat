@@ -104,7 +104,7 @@ namespace PtitChat
                 // Check if the destination folder exists
                 Directory.CreateDirectory(destination);
 
-                // Delete the file if it exists.
+                // Delete the file if it exists
                 if (System.IO.File.Exists(destination + filename))
                 {
                     System.IO.File.Delete(destination + filename);
