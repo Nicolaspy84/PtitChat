@@ -27,6 +27,18 @@ namespace Interface
             InitializeComponent();
         }
 
+        /// <summary>
+        /// Method called when closing the window to ensure the app doesn't keep running
+        /// </summary>
+        /// <param name="e"></param>
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+
+            App.Current.Shutdown();
+            Environment.Exit(0);
+            
+        }
 
     }
 }

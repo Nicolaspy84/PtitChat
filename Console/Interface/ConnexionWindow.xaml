@@ -10,7 +10,7 @@
         <local:ClientViewModel></local:ClientViewModel>
     </Window.DataContext>
     <Window.Resources>
-        <local:ConnexionConverter x:Key="ConnexionConverter"></local:ConnexionConverter>
+        <local:MultiConverter x:Key="MultiConverter"></local:MultiConverter>
     </Window.Resources>
     <Grid Background="#FF1D1889">
         <Grid.Resources>
@@ -47,7 +47,7 @@
                 </Style>
             </Button.Resources>
             <Button.CommandParameter>
-                <MultiBinding Converter="{StaticResource ConnexionConverter}">
+                <MultiBinding Converter="{StaticResource MultiConverter}">
                     <Binding ElementName="usernameTextBox"></Binding>
                     <Binding ElementName="portTextBox"></Binding>
                     <Binding ElementName="connexionWindow"></Binding>

@@ -8,57 +8,31 @@ using System.ComponentModel;
 
 namespace Interface
 {
-    public class Messages : INotifyPropertyChanged
+    public class Messages : IComparable
     {
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public string username;
 
-        private string username;
+        public string content;
 
-        public string Username
-        {
-            get {
-                if (username == null)
-                {
-                    username = string.Empty;
-                }
-                return username; }
+        public DateTime date;
 
-            set
-            {
-                if (value != username)
-                {
-                    username = value;
-                    PropertyChanged(this, new PropertyChangedEventArgs("Username"));
-                }
-            }
-        }
-
-        private string message;
-
-        public string Message
-        {
-            get {
-                if (message == null)
-                {
-                    message = string.Empty;
-                }
-                return message; }
-
-            set
-            {
-                if (value != message)
-                {
-                    message = value;
-                    PropertyChanged(this, new PropertyChangedEventArgs("Message"));
-                }
-            }
-        }
-
-        public Messages(string name, string text)
+        public Messages(string name, string message, DateTime messageDate)
         {
             username = name;
-            message = text;
+            content = message;
+            date = messageDate;
+        }
+
+        public int CompareTo(object obj)
+        {
+            return date.CompareTo(((Messages)obj).date);
+
+        }
+
+        public override string ToString()
+        {
+            return this.date.ToString("HH:mm") + " " + this.username + " : " + this.content + "\n";
         }
     }
 }
