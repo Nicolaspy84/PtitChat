@@ -89,10 +89,10 @@ You can see all the files you already received by clicking on "Fichiers" on the 
 
 ### b) Run project with terminal
 
-With console, go in `PtitChat/Console/PtitChat/bin/debug` and run the following command
+With console, go in `PtitChat/Console/PtitChat/bin/debug` and run the following command (add mono in front of the command if you are on OSX) :
 
 ```
-mono PtitChat.exe
+PtitChat.exe
 ```
 You can also run the PtitChat project in Visual Studio
 
@@ -110,10 +110,10 @@ Commands:
  - `/users`: displays all the users you know, with the messages they sent. You know a user when you received at least one message of him, in the chat room or privatly.
  - just type your message if you want to send a message on the chat
 
-To go faster, you can give all the informations in one only command:
+To go faster, you can give all the informations in one only command (add mono in front of the command if you are on OSX) :
 
 ```
-mono PtitChat.exe -username <username> -port <port> -peers <peer addresses>
+PtitChat.exe -username <username> -port <port> -peers <peer addresses>
 ```
 
 
@@ -150,4 +150,4 @@ You can also send files! To send a file to C, write this in A's console, where \
 /sendfile C <filepath>
 ```
 
-If everything worked, you should see a "Reconstructed file" notification in user C's console, and find a downloads/ folder in the same directory as your exectubale, with the doanloaded file in it !
+If everything worked, you should see a "Reconstructed file" notification in user C's console, and find a new downloads/ folder in the same directory as your exectubale, with the downloaded file in it !
