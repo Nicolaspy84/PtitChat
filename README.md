@@ -79,7 +79,9 @@ To send a file:
 - choose the file you want to send and click on "ouvrir"
 You just sent a file to a friend !
 
-When your receive a file, it's saved in a folder "Downloads", in the project. If the folder doesn't exist yet, it will be created.
+When your receive a file, it's saved in a folder "Downloads", in the project. If the folder doesn't exist yet, it will be created.\
+You can see all the files you already received by clicking on "Fichiers" on the left part.
+
 
 
 
