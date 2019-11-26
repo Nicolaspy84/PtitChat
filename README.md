@@ -8,6 +8,7 @@ Summary:
 3. Installation and run\
     a) Run project with interface \
     b) Run project with terminal
+4. Example
 
 
 ## Introduction
@@ -17,7 +18,7 @@ The PtitChat application is a decentralized chat room system, where you can :
 - Send and receive private messages to/from anyone on your network
 - Send and receive files to/from anyone on your network
 
-PtitChat does not work with a server, it's a decentralized system. Just run the application and connect to anyone else to create your own network and share messages!
+PtitChat does not work with a server, it's a decentralized system. Just run the application and connect to anyone else to create your own peer-to-peer network and share messages!
 
 ## How it works
 
@@ -117,4 +118,34 @@ mono PtitChat.exe -username <username> -port <port> -peers <peer addresses>
 When you receive a message, the console displays:\
   `username(msgID) @<date> : message`
 
+## Example
+If you would like to test a basic networking example with the console, you can follow these steps.
 
+We will create a network with three nodes, A, B and C, connected as A-B-C (so A is connected to B and B is connected to C, but A is not connected to C, so B will have to transmit messages for them). They will send rumors and private messages, and finally A will send a file to C.
+
+First, open three consoles, go to the folder containing the console application, and run the following commands (one per console, don't forget to add mono in front of the commands if you are on OSX) :
+
+```
+PtitChat.exe -username A -port 1001
+```
+For the first console, enter 'n' when asked if you would like to connect to other peers.
+```
+PtitChat.exe -username B -port 1002 -peers 127.0.0.1:1001
+```
+```
+PtitChat.exe -username C -port 1003 -peers 127.0.0.1:1002
+```
+
+You can now send rumors in any console. Try it for every user, you should see the rumor appear in other consoles. To send a private message from user A to user C, write in user A's console :
+
+```
+/sendPM C Hello C, this is a private message!
+```
+
+You can also send files! To send a file to C, write this in A's console, where \<filepath> is the path of the file you'd like to share (for example test.txt if this file is in the same folder as your console executable) :
+
+```
+/sendfile C <filepath>
+```
+
+If everything worked, you should see a "Reconstructed file" notification in user C's console, and find a downloads/ folder in the same directory as your exectubale, with the doanloaded file in it !
