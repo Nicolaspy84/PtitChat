@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Interface"
         mc:Ignorable="d"
-        Title="PtitChat le S" Height="450" Width="800" Background="White" ResizeMode="NoResize">
+        Title="PtitChat" Height="450" Width="800" Background="White" ResizeMode="NoResize">
     <Window.DataContext>
         <local:ClientViewModel></local:ClientViewModel>
     </Window.DataContext>
@@ -88,6 +88,7 @@
                         <MultiBinding Converter="{StaticResource MessageConverter}">
                             <Binding Path="(local:AllUsers.All)"></Binding>
                             <Binding ElementName="ConversationsListBox" Path="SelectedItem"></Binding>
+                            <Binding Path="(local:AllFiles.All)"></Binding>
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
@@ -128,13 +129,9 @@
             </StackPanel>
         </StackPanel>
         <StackPanel Grid.Row="1" Grid.Column="0" Background="White" Margin="20">
-            <Label Foreground="#FF1D1889">Connexions : </Label>
+            <Label Foreground="#FF1D1889">Conversations :</Label>
             <ListBox x:Name="ConversationsListBox"
-                ItemsSource="{Binding Path=(local:AllUsers.All), Converter={StaticResource UserConverter}}" Height="204"></ListBox>
+                ItemsSource="{Binding Path=(local:AllUsers.All), Converter={StaticResource UserConverter}}" Height="239"></ListBox>
         </StackPanel>
-
-
-
-
     </Grid>
 </Window>

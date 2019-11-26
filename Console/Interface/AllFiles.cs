@@ -12,9 +12,27 @@ namespace Interface
         /// <summary>
         /// Holds all the files : the key is the file name (must be a unique identifier)
         /// </summary>
-        public static Dictionary<string, File> All = new Dictionary<string, File>();
+        private static Dictionary<string, File> all = new Dictionary<string, File>();
 
+        public static Dictionary<string, File> All
+        {
+            get
+            {
+                return all;
+            }
+            set
+            {
+                all = value;
+                OnAllChanged(EventArgs.Empty);
+            }
+        }
 
+        public static event EventHandler AllChanged;
+
+        public static void OnAllChanged(EventArgs e)
+        {
+            AllChanged?.Invoke(null, e);
+        }
         /// <summary>
         /// Call this method whenever we receive a new chunk
         /// </summary>
@@ -32,6 +50,7 @@ namespace Interface
                 if (All.ContainsKey(filename) == false)
                 {
                     All.Add(filename, new File(filename, origin, nbChunks));
+                    OnAllChanged(EventArgs.Empty);
                 }
 
                 // Now we can add the chunk if this file hasn't been reconstructed yet

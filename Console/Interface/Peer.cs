@@ -199,8 +199,7 @@ namespace Interface
         public async Task SendFileAsync(string origin, string destination, string filePath)
         {
             // First we get the name of the file
-            string[] filePathSplit = filePath.Split('/');
-            string fileName = filePathSplit[filePathSplit.Length - 1];
+            string fileName = Path.GetFileName(filePath);
 
             // Current chunk ID
             long chunkID = 0;

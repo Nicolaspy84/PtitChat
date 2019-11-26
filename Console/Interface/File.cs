@@ -83,7 +83,7 @@ namespace Interface
         /// </summary>
         /// <param name="destination">folder destination</param>
         /// <returns>true if the file was reconstructed properly</returns>
-        public bool ReconstructFile(string destination = "download/")
+        public bool ReconstructFile(string destination = "downloads/")
         {
             // For every chunk needed
             for (long i = 0; i < nbChunks; i++)
@@ -95,31 +95,45 @@ namespace Interface
                 }
             }
 
-            // Delete the file if it exists.
-            if (System.IO.File.Exists(destination + filename))
+            // Try to write the file
+            try
             {
-                System.IO.File.Delete(destination + filename);
-            }
+                // Trying to write file
+                Console.WriteLine("Writing file {0}", destination + filename);
 
-            // If we arrive here it means we can safely reconstruct the file, so we loop again
-            FileStream fileStream = new FileStream(destination + filename, FileMode.Create);
+                // Check if the destination folder exists
+                Directory.CreateDirectory(destination);
 
-            // Write the data to the file, byte by byte
-            for (long i = 0; i < nbChunks; i++)
-            {
-                for (int j = 0; j < chunks[i].chunkData.Length; j++)
+                // Delete the file if it exists
+                if (System.IO.File.Exists(destination + filename))
                 {
-                    fileStream.WriteByte(chunks[i].chunkData[j]);
+                    System.IO.File.Delete(destination + filename);
                 }
-            }
 
-            // Close the file stream
-            fileStream.Close();
+                // If we arrive here it means we can safely reconstruct the file, so we loop again
+                FileStream fileStream = new FileStream(destination + filename, FileMode.Create);
+
+                // Write the data to the file, byte by byte
+                for (long i = 0; i < nbChunks; i++)
+                {
+                    for (int j = 0; j < chunks[i].chunkData.Length; j++)
+                    {
+                        fileStream.WriteByte(chunks[i].chunkData[j]);
+                    }
+                }
+
+                // Close the file stream
+                fileStream.Close();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return false;
+            }
 
             // Set reconstructed to true and clear our dictionary
             chunks.Clear();
             reconstructed = true;
-
             return true;
         }
 

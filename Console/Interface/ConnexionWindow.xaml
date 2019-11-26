@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Interface"
         mc:Ignorable="d"
-        Title="PtitChat le S" Height="250" Width="400" ResizeMode="NoResize">
+        Title="PtitChat" Height="250" Width="400" ResizeMode="NoResize">
     <Window.DataContext>
         <local:ClientViewModel></local:ClientViewModel>
     </Window.DataContext>

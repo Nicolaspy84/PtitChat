@@ -200,6 +200,7 @@ namespace PtitChat
         {
             // First we get the name of the file
             string fileName = Path.GetFileName(filePath);
+            Console.WriteLine(fileName);
 
             // Current chunk ID
             long chunkID = 0;

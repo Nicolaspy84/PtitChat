@@ -49,6 +49,17 @@ namespace Interface
                 }
                 return result;
             }
+            else if ((string)value[1] == "Fichiers")
+            {
+                string filesReceived = string.Empty;
+                var allFiles = value[2] as Dictionary<string, File>;
+                foreach (KeyValuePair<string, File> file in allFiles)
+                {
+                    filesReceived += "Fichier reçu : " + file.Key + "\n";
+                }
+                return filesReceived;
+
+            }
             else
             {
                 // If we are in a private conversation, we display the private messages between
