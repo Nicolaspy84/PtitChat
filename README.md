@@ -3,14 +3,14 @@
 Welcome to PtitChat, our peer-to-peer chat application to chat with your friends and have fun !
 
 Summary:
-1. Presentation
+1. Introduction
 2. How it works
 3. Install and run\
     a) Run project with interface \
     b) Run project with terminal
 
 
-## Introduction
+## 1. Introduction
 
 The PtitChat application is a decentralized chat room system, where you can :
 - Join a general chat room and chat with anyone on this network
@@ -19,7 +19,7 @@ The PtitChat application is a decentralized chat room system, where you can :
 
 PtitChat does not work with a server, it's a decentralized system. Just run the application and connect to anyone else to create your own network and share messages!
 
-## How it works
+## 2. How it works
 
 ### Users
 This system is a decentralized chat system. It creates and handles any number of users. A "user" is defined by a unique username and represents a physical person, we therefore assume that people agree to use different usernames.
@@ -40,13 +40,13 @@ Users can also share "files" with other users. A user can decide to send any fil
 When you start an instance of the program, you essentially first create your own little network. In this network, you are alone (a single node). You can send rumors, but for now, you will be the only one to see them. Then once you decide to connect to another peer, you merge your network with this new network (by exchanging with this peer all rumors known so far and spreading the new ones on our respective networks).
 
 
-## 2. Install and run
+## 3. Install and run
 
 ### a) Run project with interface
 
 To run the project with the interface, you need to use Windows.
 
-1. In `PtitChat/Console/Interface/bin/Debug`, click on the Interface application. If you do not habe the bin forlder, run the project one time with Visual Studio.
+1. In `PtitChat/Console/Interface/bin/Debug`, click on the Interface application. If you do not have the bin forlder, run the project one time with Visual Studio.
 2. Connect: enter the username you want to use and the port you want to use
 
 #### Connect to a friend or a chat room
@@ -88,14 +88,14 @@ You can see all the files you already received by clicking on "Fichiers" on the 
 
 ### b) Run project with terminal
 
-In `PtitChat/Console/PtitChat/bin/debug`, run the following command
+With console, go in `PtitChat/Console/PtitChat/bin/debug` and run the following command
 
 ```
 mono PtitChat.exe
 ```
 You can also run the PtitChat project in Visual Studio
 
-Then follow the instructions, enter your username (ex: michel) and your port (ex: 3000).
+Then follow the instructions, enter your username (ex: michel) and your port (ex: 3000).\
 If you want to connect to peers, respond Y to the question and enter their addresses with the form
 ```
 ip_address:port_number ip_address_2:port_number_2
